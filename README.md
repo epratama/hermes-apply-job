@@ -240,3 +240,4 @@ MIT — see [LICENSE](LICENSE).
 - [stop-slop](https://github.com/hardikpandya/stop-slop) by [Hardik Pandya](https://hvpandya.com) — MIT License
 - [Superpowers](https://github.com/obra/superpowers) by [obra](https://github.com/obra) — Apache 2.0 License
 - [Ponytail](https://github.com/DietrichGebert/ponytail) by [Dietrich Gebert](https://github.com/DietrichGebert) — MIT License
+- [OpenCode](https://github.com/opencode-ai/opencode) — MIT License
