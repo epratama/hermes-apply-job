@@ -65,7 +65,12 @@ the agent how this project works.
 ```
 /apply-job https://example.com/jobs/12345
 ```
-Replace the URL with an actual job listing.
+Replace the URL with an actual job listing. After the pipeline runs,
+you'll be asked to pick a resume template — three styles are generated
+for you to choose from. You can also paste a custom Typst Universe URL.
+
+You can also browse all resume templates beforehand:
+https://typst.app/universe/search?q=resume
 
 ## Preparing Your Resume
 
