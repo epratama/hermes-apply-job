@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 """Hermes Apply-Job Setup — one-command configuration.
 
+Author: Eky Pratama
+Repo:   https://github.com/epratama/hermes-apply-job
+
 Usage:
     python3 scripts/setup.py --resume ~/my-resume.pdf [--format md|docx|pdf]
 
-Checks prerequisites, copies your resume, installs the apply-job skill,
-merges MoA presets into ~/.hermes/config.yaml, and validates with Hermes.
+Checks prerequisites, copies your resume, installs apply-job and stop-slop
+skills, merges MoA presets, and validates with Hermes.
 """
 
 import argparse
@@ -16,7 +19,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-SYSTEM = platform.system()           # "Darwin", "Linux", "Windows"
+SYSTEM = platform.system()
 IS_WINDOWS = SYSTEM == "Windows"
 IS_MACOS = SYSTEM == "Darwin"
 IS_LINUX = SYSTEM == "Linux"
@@ -26,6 +29,22 @@ HERMES_URL = "https://hermes-agent.nousresearch.com/"
 PANDOC_URL = "https://pandoc.org/installing.html"
 WKHTML_URL = "https://wkhtmltopdf.org/downloads.html"
 
+# ANSI colors — disabled when output is piped
+IS_TTY = sys.stdout.isatty()
+C_RESET  = "\033[0m"  if IS_TTY else ""
+C_BOLD   = "\033[1m"  if IS_TTY else ""
+C_GREEN  = "\033[32m" if IS_TTY else ""
+C_YELLOW = "\033[33m" if IS_TTY else ""
+C_RED    = "\033[31m" if IS_TTY else ""
+C_CYAN   = "\033[36m" if IS_TTY else ""
+GREEN_CHECK  = f"{C_GREEN}\u2713{C_RESET}"
+YELLOW_WARN  = f"{C_YELLOW}\u26a0{C_RESET}"
+RED_CROSS    = f"{C_RED}\u2717{C_RESET}"
+
+# ponytail: shutil.which() is stdlib since 3.3, covers unix+windows
+def _which(cmd):
+    return shutil.which(cmd) is not None
+
 
 def run(cmd, capture=True):
     """Run a shell command, return (returncode, stdout)."""
@@ -34,17 +53,6 @@ def run(cmd, capture=True):
         return result.returncode, result.stdout.strip() if capture else ""
     except FileNotFoundError:
         return -1, ""
-
-
-def _which(cmd):
-    """Cross-platform command location (which on Unix, where on Windows)."""
-    rc, _ = run(f"which {cmd}")
-    if rc == 0:
-        return True
-    if IS_WINDOWS:
-        rc, _ = run(f"where {cmd}")
-        return rc == 0
-    return False
 
 
 def _hermes_home():
@@ -58,58 +66,20 @@ def _hermes_home():
     return Path.home() / ".hermes"
 
 
-def _detect_package_manager():
-    """Return (name, install_template) or (None, None)."""
-    if IS_MACOS and _which("brew"):
-        return "brew", "brew install {}"
-    if IS_LINUX:
-        for mgr, tmpl in [("apt-get", "sudo apt-get install -y {}"),
-                          ("dnf", "sudo dnf install -y {}"),
-                          ("pacman", "sudo pacman -S --noconfirm {}")]:
-            if _which(mgr):
-                return mgr, tmpl
-    if IS_WINDOWS and _which("choco"):
-        return "choco", "choco install {} -y"
-    return None, None
-
-
-def _auto_install(pkg_name, pkg_desc, pkg_url):
-    """Install a package using the detected package manager.
-    If no manager is found, print OS-specific manual instructions.
-    Returns True if installed, False otherwise."""
-    mgr, tmpl = _detect_package_manager()
-    if mgr:
-        if ask(f"Install {pkg_desc}?"):
-            rc, _ = run(tmpl.format(pkg_name) + f" 2>{DEVNULL}")
-            if rc == 0:
-                ok(f"{pkg_desc} installed")
-                return True
-        warn(f"Install manually: {tmpl.format(pkg_name)}")
-        return False
-    err(f"No package manager detected ({pkg_desc} not installed).")
-    if IS_MACOS:
-        print(f"  Install Homebrew first, then: brew install {pkg_name}")
-    elif IS_LINUX:
-        print(f"  Install from: {pkg_url}")
-    elif IS_WINDOWS:
-        print(f"  Install from: {pkg_url}")
-    return False
-
-
 def header(text):
-    print(f"\n━━━ {text} ━━━")
+    print(f"\n{C_CYAN}{C_BOLD}==>{C_RESET} {text}")
 
 
 def ok(msg):
-    print(f"  ✓ {msg}")
+    print(f"  {GREEN_CHECK} {msg}")
 
 
 def warn(msg):
-    print(f"  ⚠ {msg}")
+    print(f"  {YELLOW_WARN} {msg}")
 
 
 def err(msg):
-    print(f"  ✗ {msg}")
+    print(f"  {RED_CROSS} {msg}")
 
 
 def ask(msg):
@@ -161,35 +131,30 @@ def check_toolsets():
             _enable_toolset(t)
 
 
-def _check_pandoc_installed():
-    """Return True if pandoc is available, prompt install if not."""
-    if _which("pandoc"):
-        ok("pandoc installed")
-        return True
-    err("pandoc not found")
-    return _auto_install("pandoc", "pandoc", PANDOC_URL)
-
-
-def _check_wkhtmltopdf_installed():
-    """Return True if wkhtmltopdf is available, prompt install if not.
-    Returns True even if not available (non-blocking for PDF setup)."""
-    if _which("wkhtmltopdf"):
-        ok("wkhtmltopdf installed")
-        return True
-    err("wkhtmltopdf not found (needed for PDF output)")
-    _auto_install("wkhtmltopdf", "wkhtmltopdf", WKHTML_URL)
-    return True  # let setup continue even without wkhtmltopdf
-
-
 def check_pandoc_needed(output_format):
-    """Check pandoc and wkhtmltopdf availability for docx/pdf output."""
+    """Check pandoc and wkhtmltopdf availability for docx/pdf output.
+    Prints install instructions per-OS — user runs them manually."""
     if output_format == "md":
         return True
-    if not _check_pandoc_installed():
+
+    def _check(name, hint, url):
+        if _which(name):
+            ok(f"{name} installed")
+            return True
+        err(f"{name} not found (needed for {output_format} output)")
+        if IS_MACOS:
+            warn(f"Install manually: brew install {hint}")
+        elif IS_LINUX:
+            warn(f"Install from: {url}")
+        elif IS_WINDOWS:
+            warn(f"Install from: {url}")
+        return False
+
+    if not _check("pandoc", "pandoc", PANDOC_URL):
         ok("Output will stay as markdown. Use --format md to avoid this warning.")
         return False
     if output_format == "pdf":
-        _check_wkhtmltopdf_installed()
+        _check("wkhtmltopdf", "wkhtmltopdf", WKHTML_URL)
     return True
 
 
@@ -259,7 +224,7 @@ def merge_moa_config(config_content, moa_content):
     Merge MoA presets into config content.
     If config has no moa section, append the moa content directly.
     If config already has a moa section, show the presets for manual merge
-    (safe — avoids YAML nesting errors from string-based insertion).
+    — avoids YAML nesting errors from string-based insertion.
     Returns True if file was modified, False if only instructions were printed.
     """
     config_path = _hermes_home() / "config.yaml"
@@ -279,7 +244,6 @@ def merge_moa_config(config_content, moa_content):
             f.write(merged)
         return True
 
-    # moa: section exists — show presets for manual merge
     warn("MoA section already exists in config. Add these presets manually.")
     print()
     moa_lines = moa_content.strip().split("\n")
@@ -318,22 +282,21 @@ def _print_missing_presets(missing, existing):
         print(f"  Already configured: {', '.join(sorted(existing))}")
     print()
     print("  Default presets from config/moa-presets.yaml:")
-    print("    • resume-analyzer  — Fast extraction (deepseek-v4-flash + v4-pro)")
-    print("    • resume-writer    — Creative writing (MiniMax-M3 + Nemotron 3 Ultra + v4-pro)")
-    print("    • resume-auditor   — Detail scoring (MiniMax-M3 + Nemotron 3 Ultra + v4-pro)")
+    print("    \u2022 resume-analyzer  \u2014 Fast extraction (deepseek-v4-flash + v4-pro)")
+    print("    \u2022 resume-writer    \u2014 Creative writing (MiniMax-M3 + Nemotron 3 Ultra + v4-pro)")
+    print("    \u2022 resume-auditor   \u2014 Detail scoring (MiniMax-M3 + Nemotron 3 Ultra + v4-pro)")
     print()
 
 
 def _validate_moa():
-    """Run hermes moa list and print results. Return True if successful."""
+    """Run hermes moa list and print results."""
     rc, out = run(f"hermes moa list 2>{DEVNULL}")
     if rc == 0 and out:
         ok("hermes moa list succeeded")
         for line in out.split("\n"):
             print(f"    {line.strip()}")
-        return True
+        return
     warn("Could not validate with hermes moa list")
-    return False
 
 
 def setup_moa():
@@ -394,8 +357,12 @@ def main():
                         help="Output format (default: md)")
     args = parser.parse_args()
 
-    print("Hermes Apply-Job — Setup")
-    print("=========================")
+    print(f"{C_BOLD}\u2554\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2557{C_RESET}")
+    print(f"{C_BOLD}\u2551          Hermes Apply-Job \u2014 Setup           \u2551{C_RESET}")
+    print(f"{C_BOLD}\u2551   github.com/epratama/hermes-apply-job      \u2551{C_RESET}")
+    print(f"{C_BOLD}\u2551               by Eky Pratama                \u2551{C_RESET}")
+    print(f"{C_BOLD}\u255a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u255d{C_RESET}")
+    print()
 
     check_hermes()
     check_toolsets()
