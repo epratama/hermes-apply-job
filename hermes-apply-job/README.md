@@ -75,8 +75,8 @@ perspectives; the aggregator produces the final unified output.
 ### `resume-auditor` — Quality Scoring
 
 Scores both documents on keyword coverage, ATS parsability, fabrication
-detection, length, tone, and personalization. Two independent critiques
-feed into one verdict.
+detection, length, tone, personalization, and AI writing pattern detection.
+Two independent critiques feed into one verdict.
 
 | Role | Model |
 |------|-------|
@@ -131,7 +131,7 @@ analysis and audit reports. Only the format you selected is produced.
 │ (analyzer)   │ (writer)     │ Writer       │ (auditor)       │
 │              │              │ (writer)     │                 │
 │ Fetch JD     │ Tailor       │ Draft cover  │ Score across    │
-│ Extract      │ resume with  │ letter       │ 6 criteria      │
+│ Extract      │ resume with  │ letter       │ 7 criteria      │
 │ keywords     │ JD keywords  │              │ (target ≥90)    │
 └──────────────┴──────────────┴──────────────┴─────────────────┘
                           │

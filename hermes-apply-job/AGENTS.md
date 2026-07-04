@@ -51,5 +51,6 @@ Output format (md, docx, or pdf) is selected at setup time via `--format`.
 
 - Never fabricate experience. All claims must be traceable to `resume.pdf`.
 - If you lack a skill, acknowledge it honestly in the cover letter.
+- Use real contact info only — name, email, phone, LinkedIn from `resume.pdf`.
 - Output format is configured at setup. Default is markdown.
 - Use the JD's language style.

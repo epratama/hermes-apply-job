@@ -12,7 +12,7 @@ Run the setup script to install the skill and configure MoA presets:
 python3 scripts/setup.py --resume <path-to-your-resume.pdf> [--format md|docx|pdf]
 ```
 
-The script handles: skill installation, MoA preset configuration, toolsets,
+The script handles: installs the `apply-job` and `stop-slop` skills, MoA preset configuration, toolsets,
 resume copying, and output format. Re-run anytime to update configuration.
 
 See README.md for prerequisites and troubleshooting.
