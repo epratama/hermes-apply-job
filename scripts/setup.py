@@ -303,7 +303,17 @@ def main():
                         help="Output format (default: md)")
     args = parser.parse_args()
 
-    print(f"{C_BOLD}hermes-apply-job{C_RESET}  {C_CYAN}github.com/epratama/hermes-apply-job{C_RESET}  by Eky Pratama\n")
+    url = "github.com/epratama/hermes-apply-job"
+    w = len(url) + 4
+    h_bar = "\u2550"
+    h_title = "Hermes Apply-Job \u2014 Setup"
+    h_author = "by Eky Pratama"
+    print(f"{C_BOLD}\u2554{h_bar * w}\u2557{C_RESET}")
+    print(f"{C_BOLD}\u2551{h_title:^{w}}\u2551{C_RESET}")
+    print(f"{C_BOLD}\u2551  {url}  \u2551{C_RESET}")
+    print(f"{C_BOLD}\u2551{h_author:^{w}}\u2551{C_RESET}")
+    print(f"{C_BOLD}\u255a{h_bar * w}\u255d{C_RESET}")
+    print()
 
     check_hermes()
     check_toolsets()
