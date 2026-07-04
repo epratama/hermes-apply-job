@@ -95,7 +95,6 @@ Rules:
 - Avoid AI writing patterns: no filler phrases, no adverbs, no passive voice, no em dashes, no vague declaratives
 - If the JD asks for something the candidate genuinely lacks, do not mention it in the resume
 - Use real contact info only from resume.pdf
-- Avoid AI writing patterns: no filler phrases, no adverbs, no passive voice, no em dashes, no vague declaratives
 ```
 
 3. Wait for the subagent to finish. Verify the file was created.
