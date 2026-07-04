@@ -156,21 +156,6 @@ def install_skill():
         warn("Skill installed but not detected. Restart Hermes if it was running.")
 
 
-def parse_yaml_simple(content):
-    """Very basic YAML-like parser for config merge. Handles nested dicts one level deep."""
-    result = {}
-    lines = content.split("\n")
-    # Filter out comments
-    clean_lines = []
-    for line in lines:
-        stripped = line.strip()
-        if stripped.startswith("#") or not stripped:
-            continue
-        clean_lines.append(line)
-    content = "\n".join(clean_lines)
-    return content  # Just return cleaned content for merging
-
-
 def load_config():
     """Load ~/.hermes/config.yaml if it exists."""
     config_path = Path.home() / ".hermes" / "config.yaml"
@@ -194,21 +179,32 @@ def merge_moa_config(config_content, moa_content):
     """
     Merge MoA presets into config content.
     If config has no moa section, append the moa content.
-    If config has existing moa presets, keep those and add missing ones.
+    If config has existing moa section, append only the new presets under it.
     """
     config_path = Path.home() / ".hermes" / "config.yaml"
 
-    # Simple approach: check if moa section exists
     if "moa:" not in config_content or config_content.strip() == "":
-        # No moa section — append the full moa block
         if config_content.strip():
             merged = config_content.rstrip() + "\n\n" + moa_content
         else:
             merged = moa_content
     else:
-        # Moa section exists — just report, don't overwrite
-        # For safety, we append the moa defaults and let the user's existing config take precedence
-        merged = config_content.rstrip() + "\n\n# Added by hermes-apply-job setup\n" + moa_content
+        # Moa section exists — extract only the presets block from moa_content
+        # and indent it under the existing moa: key to avoid duplicate keys
+        moa_lines = moa_content.strip().split("\n")
+        preset_lines = []
+        found_presets = False
+        for line in moa_lines:
+            if line.startswith("  presets:"):
+                found_presets = True
+                preset_lines.append(line.strip())
+            elif found_presets:
+                preset_lines.append(line.rstrip())
+        if preset_lines:
+            moa_block = "\n".join(preset_lines)
+            merged = config_content.rstrip() + "\n\n# Added by hermes-apply-job setup\n" + moa_block
+        else:
+            merged = config_content
 
     # Backup original
     backup_path = config_path.with_suffix(".yaml.bak")
@@ -276,22 +272,12 @@ def setup_moa():
 
 def set_output_format(output_format):
     """Set the output_format in Hermes skill config."""
-    # The output_format is set as a Hermes skill config setting.
-    # For now, this is handled by the SKILL.md frontmatter and the user
-    # can set it via hermes config if desired.
-    # The setup script records the choice for reference.
-    config_path = Path.home() / ".hermes" / "config.yaml"
-    if config_path.exists():
-        with open(config_path) as f:
-            content = f.read()
-
-        if "output_format:" in content and "apply-job" in content:
-            ok(f"Output format: {output_format} (already configured)")
-        else:
-            # Note: Hermes skill config is auto-set via hermes config migrate
-            # We just print the command for the user
-            ok(f"Output format: {output_format}")
-            print(f"  To change later: hermes config set skills.config.apply-job.output_format {output_format}")
+    header("Output Format")
+    rc, _ = run(f"hermes config set skills.config.apply-job.output_format {output_format} 2>/dev/null")
+    if rc == 0:
+        ok(f"Output format set to: {output_format}")
+    else:
+        warn(f"Could not set output format. Run manually: hermes config set skills.config.apply-job.output_format {output_format}")
 
 
 def print_summary(output_format):

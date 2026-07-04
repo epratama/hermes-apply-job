@@ -11,8 +11,8 @@
 ## Global Constraints
 
 - Output: `tailored-resumes/<company>-<role>/Resume.md` and `CoverLetter.md`
-- Base resume: `master-resume.pdf` in project root
-- Never fabricate experience — all claims must be traceable to `master-resume.pdf`
+- Base resume: `resume.pdf` in project root
+- Never fabricate experience — all claims must be traceable to `resume.pdf`
 - 3 MoA presets: `resume-analyzer`, `resume-writer`, `resume-auditor`
 - Auditor scores resume + cover letter on keyword coverage, ATS, fabrication, length, tone, personalization
 - Consortium loop: iterate until score ≥90 or 3 rounds completed
@@ -34,7 +34,7 @@
 ```markdown
 # Resume Optimization Project
 
-This project tailors my resume (`master-resume.pdf`) to specific job listings
+This project tailors my resume (`resume.pdf`) to specific job listings
 using a multi-agent MoA consortium orchestrated by Hermes.
 
 ## How It Works
@@ -45,7 +45,7 @@ using a multi-agent MoA consortium orchestrated by Hermes.
 
 ## Key Files
 
-- `master-resume.pdf` — my base resume (source of truth, 15+ years SWE)
+- `resume.pdf` — my base resume (source of truth, 15+ years SWE)
 - `IDEA.md` — full project spec with MoA presets and pipeline details
 - `tailored-resumes/` — output directory, one subfolder per application
 
@@ -76,7 +76,7 @@ tailored-resumes/<company>-<role>/
 
 ## Guardrails
 
-- Never fabricate experience. All claims must be traceable to `master-resume.pdf`.
+- Never fabricate experience. All claims must be traceable to `resume.pdf`.
 - If I lack a skill, acknowledge it honestly in the cover letter.
 - Output is markdown. PDF conversion is manual (ask Hermes when ready).
 - Use the JD's language style.
@@ -197,7 +197,7 @@ Expected: `resume-analyzer`, `resume-writer`, `resume-auditor` appear in the lis
 - Create: `~/.hermes/skills/career/apply-job/SKILL.md`
 
 **Interfaces:**
-- Consumes: MoA presets (`resume-analyzer`, `resume-writer`, `resume-auditor`), `master-resume.pdf`
+- Consumes: MoA presets (`resume-analyzer`, `resume-writer`, `resume-auditor`), `resume.pdf`
 - Produces: Slash command `/apply-job <url>` that runs the full pipeline
 
 - [ ] **Step 1: Write the SKILL.md**
@@ -219,10 +219,10 @@ metadata:
 
 ## When to Use
 
-When the user wants to tailor their master resume to a specific job listing.
+When the user wants to tailor their resume to a specific job listing.
 Triggered via `/apply-job <job-listing-url>`.
 
-The user's base resume is `master-resume.pdf` in the project root.
+The user's base resume is `resume.pdf` in the project root.
 
 ## MoA Presets
 
@@ -241,7 +241,7 @@ You are the orchestrator. Execute each step in order. Switch MoA presets before 
 ### Step 1 — Job Analyzer
 
 1. Extract the job-listing URL from the `/apply-job` command argument.
-2. Verify `master-resume.pdf` exists in the project root. If not, stop and tell the user to place it there.
+2. Verify `resume.pdf` exists in the project root. If not, stop and tell the user to place it there.
 3. Switch model to MoA preset `resume-analyzer`: `/model resume-analyzer --provider moa`
 4. Spawn a subagent with toolsets `[terminal, web]`. Give it this exact prompt:
 
@@ -279,7 +279,7 @@ report the failure to the parent and do not create any files.
 
 ```
 Read the job analysis at tailored-resumes/<company>-<role>/analysis.md.
-Read the base resume at master-resume.pdf.
+Read the base resume at resume.pdf.
 
 Write a tailored resume saved to tailored-resumes/<company>-<role>/Resume.md.
 
@@ -290,9 +290,9 @@ Rules:
 - Keep to 2 pages equivalent in markdown
 - Use the JD's language style (enterprise, startup, academic)
 - NEVER fabricate experience, degrees, certifications, or dates
-- All achievements must be traceable to master-resume.pdf
+- All achievements must be traceable to resume.pdf
 - If the JD asks for something the candidate genuinely lacks, do not mention it in the resume
-- Use real contact info only from master-resume.pdf
+- Use real contact info only from resume.pdf
 ```
 
 3. Wait for the subagent to finish. Verify the file was created.
@@ -305,7 +305,7 @@ Rules:
 
 ```
 Read the job analysis at tailored-resumes/<company>-<role>/analysis.md.
-Read the base resume at master-resume.pdf.
+Read the base resume at resume.pdf.
 
 Write a tailored cover letter saved to tailored-resumes/<company>-<role>/CoverLetter.md.
 
@@ -316,7 +316,7 @@ Rules:
 - Address any obvious gap as a growth area, not an invention
 - 1 page equivalent in markdown
 - NEVER fabricate experience or credentials
-- All achievements must be traceable to master-resume.pdf
+- All achievements must be traceable to resume.pdf
 ```
 
 3. Wait for the subagent to finish. Verify the file was created.
@@ -332,7 +332,7 @@ Read:
 - tailored-resumes/<company>-<role>/analysis.md (job requirements)
 - tailored-resumes/<company>-<role>/Resume.md (tailored resume)
 - tailored-resumes/<company>-<role>/CoverLetter.md (tailored cover letter)
-- master-resume.pdf (base resume — ground truth)
+- resume.pdf (base resume — ground truth)
 
 Audit both documents and save your report to tailored-resumes/<company>-<role>/audit-round-<N>.md
 (where N is the round number, starting at 1).
@@ -345,7 +345,7 @@ Score each criteria from 0-100 and return an overall score (average of all):
 2. ATS Parsability: Standard section headings, no images/tables/icons, plain text.
    Deduct for any non-standard formatting, missing section labels, or complex structures.
 
-3. No Fabrication: Cross-reference every claim in the resume and cover letter against master-resume.pdf.
+3. No Fabrication: Cross-reference every claim in the resume and cover letter against resume.pdf.
    Deduct heavily for any claim not in the base resume. Flag exact fabricated lines.
 
 4. Length: Resume ≤2 pages, cover letter ≤1 page (markdown equivalent, ~80 lines per page).
@@ -372,7 +372,7 @@ Output format:
 - Fixes: [list]
 
 ### 3. No Fabrication: X/100
-- Flagged claims: [list exact lines that aren't in master-resume.pdf]
+- Flagged claims: [list exact lines that aren't in resume.pdf]
 - Verdict: [pass if none, fail with details otherwise]
 
 ### 4. Length: X/100
@@ -437,9 +437,9 @@ To convert to PDF, reply: "convert to PDF"
 ## Pitfalls
 
 - If MoA presets are not configured, stop early and tell the user: "MoA presets are missing. Add `resume-analyzer`, `resume-writer`, and `resume-auditor` to `~/.hermes/config.yaml`. See IDEA.md for the snippet."
-- If `master-resume.pdf` is not found in the project root, stop and ask the user to place it there.
+- If `resume.pdf` is not found in the project root, stop and ask the user to place it there.
 - Subagents timeout after 50 iterations by default. Complex audits may need more. If a subagent times out, re-spawn it with a narrower scope.
-- Fabrication is the hardest failure mode. Auditor must cross-reference every major claim against `master-resume.pdf`. If uncertain, flag it.
+- Fabrication is the hardest failure mode. Auditor must cross-reference every major claim against `resume.pdf`. If uncertain, flag it.
 - The `<company>-<role>` slug is derived from the analysis. If the Analyzer fails to extract these, use a fallback like `job-<timestamp>`.
 
 ## Verification
@@ -449,7 +449,7 @@ To test the pipeline:
 1. Run `/apply-job <url>` with a known job listing
 2. Verify all files are created in `tailored-resumes/`
 3. Check the audit score
-4. Review the tailored resume for accuracy (cross-reference against master-resume.pdf)
+4. Review the tailored resume for accuracy (cross-reference against resume.pdf)
 5. Run `/apply-job` with a different role/company to verify consistent behavior
 ```
 
@@ -501,10 +501,10 @@ Expected: `analysis.md`, `Resume.md`, `CoverLetter.md`, at least one `audit-roun
 - [ ] **Step 3: Verify guardrails**
 
 ```bash
-# Check no fabricated claims — spot-check 3 claims against master-resume.pdf
+# Check no fabricated claims — spot-check 3 claims against resume.pdf
 python3 -c "
 import pdfplumber
-with pdfplumber.open('master-resume.pdf') as pdf:
+with pdfplumber.open('resume.pdf') as pdf:
     base_text = ' '.join([p.extract_text() or '' for p in pdf.pages])
 # Read tailored resume and check key phrases exist in base_text
 "

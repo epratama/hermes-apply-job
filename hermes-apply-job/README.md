@@ -15,7 +15,7 @@ hermes
 ## Prerequisites
 
 - **[Hermes Agent](https://hermes-agent.nousresearch.com/)** v0.18+
-- **A model provider** configured in `~/.hermes/config.yaml`
+- **A model provider** configured (run `hermes setup` to configure)
   (default presets use OpenRouter; edit `config/moa-presets.yaml` to use your own)
 - **pandoc** (for docx/pdf output) — install with your system package manager:
   ```bash
@@ -180,6 +180,47 @@ All claims in the output are traceable to your `resume.pdf`. The auditor
 deducts heavily for fabricated experience and flags every suspect line.
 If the JD asks for a skill you don't have, the cover letter acknowledges
 it honestly instead of inventing it.
+
+## FAQ
+
+### "hermes skills list" doesn't show apply-job
+Restart Hermes. The skill is installed but Hermes scans skills at startup.
+Re-run `python3 scripts/setup.py` if it still doesn't appear.
+
+### MoA presets show "model not found"
+The default models require OpenRouter access. Edit `config/moa-presets.yaml`
+to use models available on your account, then re-run `python3 scripts/setup.py`.
+
+### Pandoc not found during conversion
+The pipeline falls back to markdown output. Install pandoc with your package
+manager and re-run the pipeline.
+
+### The auditor score stays below 90 after 3 rounds
+The JD might be behind a login wall. The pipeline will prompt you to paste
+the full job description when asked — provide the complete text.
+
+### Can I use my own API keys instead of OpenRouter?
+Yes. Edit `config/moa-presets.yaml` — change `provider` and `model` values.
+Re-run `python3 scripts/setup.py`. See Customizing Models section above.
+
+### Does this work on Windows?
+Yes. Hermes Agent supports Windows natively. Setup uses choco for package
+installs where available.
+
+### How do I update the skill?
+`git pull && python3 scripts/setup.py --resume <path>`
+
+### My resume is in Word/Pages format
+Convert to PDF first (`pandoc resume.docx -o resume.pdf` or File → Export
+as PDF), then provide the PDF to `--resume`.
+
+### I already have MoA presets. Will setup overwrite them?
+No. Setup detects existing presets and only adds missing ones. A backup is
+saved to `~/.hermes/config.yaml.bak`.
+
+### How do I change models after setup?
+Edit `config/moa-presets.yaml` and run `python3 scripts/setup.py --resume <path>`
+again.
 
 ## License
 

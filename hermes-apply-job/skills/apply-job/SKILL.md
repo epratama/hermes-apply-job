@@ -19,7 +19,7 @@ metadata:
 
 ## When to Use
 
-When the user wants to tailor their master resume to a specific job listing.
+When the user wants to tailor their resume to a specific job listing.
 Triggered via `/apply-job <job-listing-url>`.
 
 The user's base resume is `resume.pdf` in the project root.
@@ -225,10 +225,10 @@ If the auditor flagged fabricated claims, REMOVE them — do not try to justify.
 2. Convert both files based on the format:
 
    - **md**: no conversion needed. Present the `.md` files as final output.
-   - **docx**: run `pandoc Resume.md -o Resume.docx` and
-     `pandoc CoverLetter.md -o CoverLetter.docx`
-   - **pdf**: run `pandoc Resume.md --pdf-engine=wkhtmltopdf -o Resume.pdf` and
-     `pandoc CoverLetter.md --pdf-engine=wkhtmltopdf -o CoverLetter.pdf`
+   - **docx**: run `pandoc tailored-resumes/<company>-<role>/Resume.md -o tailored-resumes/<company>-<role>/Resume.docx` and
+     `pandoc tailored-resumes/<company>-<role>/CoverLetter.md -o tailored-resumes/<company>-<role>/CoverLetter.docx`
+   - **pdf**: run `pandoc tailored-resumes/<company>-<role>/Resume.md --pdf-engine=wkhtmltopdf -o tailored-resumes/<company>-<role>/Resume.pdf` and
+     `pandoc tailored-resumes/<company>-<role>/CoverLetter.md --pdf-engine=wkhtmltopdf -o tailored-resumes/<company>-<role>/CoverLetter.pdf`
 
    If pandoc is not installed, report the error, keep the `.md` output,
    and tell the user how to install it.
