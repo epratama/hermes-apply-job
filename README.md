@@ -238,3 +238,5 @@ MIT — see [LICENSE](LICENSE).
 
 - [Hermes Agent](https://github.com/NousResearch/hermes-agent) by [Nous Research](https://nousresearch.com) — MIT License
 - [stop-slop](https://github.com/hardikpandya/stop-slop) by [Hardik Pandya](https://hvpandya.com) — MIT License
+- [Superpowers](https://github.com/obra/superpowers) by [obra](https://github.com/obra) — Apache 2.0 License
+- [Ponytail](https://github.com/DietrichGebert/ponytail) by [Dietrich Gebert](https://github.com/DietrichGebert) — MIT License
