@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-- Output: `tailored-resumes/<company>-<role>/Eky_Pratama_Resume.md` and `Eky_Pratama_CoverLetter.md`
+- Output: `tailored-resumes/<company>-<role>/Resume.md` and `CoverLetter.md`
 - Base resume: `master-resume.pdf` in project root
 - Never fabricate experience — all claims must be traceable to `master-resume.pdf`
 - 3 MoA presets: `resume-analyzer`, `resume-writer`, `resume-auditor`
@@ -67,8 +67,8 @@ Three presets: `resume-analyzer`, `resume-writer`, `resume-auditor`.
 ```
 tailored-resumes/<company>-<role>/
   analysis.md           # Job Analyzer output
-  Eky_Pratama_Resume.md
-  Eky_Pratama_CoverLetter.md
+  Resume.md
+  CoverLetter.md
   audit-round-1.md      # Auditor reports per round (up to 3)
   audit-round-2.md
   audit-round-3.md
@@ -281,7 +281,7 @@ report the failure to the parent and do not create any files.
 Read the job analysis at tailored-resumes/<company>-<role>/analysis.md.
 Read the base resume at master-resume.pdf.
 
-Write a tailored resume saved to tailored-resumes/<company>-<role>/Eky_Pratama_Resume.md.
+Write a tailored resume saved to tailored-resumes/<company>-<role>/Resume.md.
 
 Rules:
 - Reorder bullet points so most relevant experience surfaces first
@@ -307,7 +307,7 @@ Rules:
 Read the job analysis at tailored-resumes/<company>-<role>/analysis.md.
 Read the base resume at master-resume.pdf.
 
-Write a tailored cover letter saved to tailored-resumes/<company>-<role>/Eky_Pratama_CoverLetter.md.
+Write a tailored cover letter saved to tailored-resumes/<company>-<role>/CoverLetter.md.
 
 Rules:
 - 3-4 paragraphs: opening hook, 2 body paragraphs mapping top candidate matches to the role's stated needs, closing with call to action
@@ -330,8 +330,8 @@ Rules:
 ```
 Read:
 - tailored-resumes/<company>-<role>/analysis.md (job requirements)
-- tailored-resumes/<company>-<role>/Eky_Pratama_Resume.md (tailored resume)
-- tailored-resumes/<company>-<role>/Eky_Pratama_CoverLetter.md (tailored cover letter)
+- tailored-resumes/<company>-<role>/Resume.md (tailored resume)
+- tailored-resumes/<company>-<role>/CoverLetter.md (tailored cover letter)
 - master-resume.pdf (base resume — ground truth)
 
 Audit both documents and save your report to tailored-resumes/<company>-<role>/audit-round-<N>.md
@@ -401,8 +401,8 @@ For rounds 2 and 3 (max 3 total rounds):
 
 ```
 Read the latest audit at tailored-resumes/<company>-<role>/audit-round-<N-1>.md.
-Read the current resume at tailored-resumes/<company>-<role>/Eky_Pratama_Resume.md.
-Read the current cover letter at tailored-resumes/<company>-<role>/Eky_Pratama_CoverLetter.md.
+Read the current resume at tailored-resumes/<company>-<role>/Resume.md.
+Read the current cover letter at tailored-resumes/<company>-<role>/CoverLetter.md.
 
 Address every flagged issue from the audit. Apply all suggested fixes unless
 they would introduce fabrication. Save updated versions of both files.
@@ -423,8 +423,8 @@ If the auditor flagged fabricated claims, REMOVE them — do not try to justify.
 Resume and cover letter ready for <Company Name> — <Role Title>.
 
 Files:
-  tailored-resumes/<company>-<role>/Eky_Pratama_Resume.md
-  tailored-resumes/<company>-<role>/Eky_Pratama_CoverLetter.md
+  tailored-resumes/<company>-<role>/Resume.md
+  tailored-resumes/<company>-<role>/CoverLetter.md
 
 Final Audit Score: X/100 (Round N)
 
@@ -496,7 +496,7 @@ In the project directory, start Hermes and run:
 ```bash
 ls -la tailored-resumes/<company>-<role>/
 ```
-Expected: `analysis.md`, `Eky_Pratama_Resume.md`, `Eky_Pratama_CoverLetter.md`, at least one `audit-round-*.md`
+Expected: `analysis.md`, `Resume.md`, `CoverLetter.md`, at least one `audit-round-*.md`
 
 - [ ] **Step 3: Verify guardrails**
 

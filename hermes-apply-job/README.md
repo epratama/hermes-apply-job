@@ -180,3 +180,7 @@ All claims in the output are traceable to your `resume.pdf`. The auditor
 deducts heavily for fabricated experience and flags every suspect line.
 If the JD asks for a skill you don't have, the cover letter acknowledges
 it honestly instead of inventing it.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
