@@ -30,7 +30,7 @@ hermes
   choco install wkhtmltopdf      # Windows
   ```
 
-The setup script checks all prerequisites and asks before installing anything.
+The setup script checks all prerequisites and prints installation instructions for missing tools.
 
 ## What the Setup Script Does
 
@@ -38,7 +38,8 @@ The setup script checks all prerequisites and asks before installing anything.
 
 1. Checks Hermes is installed and toolsets (terminal, delegation, web)
    are enabled
-2. Optional: installs pandoc and wkhtmltopdf if you picked docx/pdf output
+2. Checks pandoc and wkhtmltopdf availability and prints OS-specific install
+   instructions if you picked docx/pdf output
 3. Copies your resume to the project as `resume.pdf`
 4. Installs the `apply-job` and `stop-slop` skills to `~/.hermes/skills/`
 5. Checks your MoA presets, shows what's missing, asks to merge defaults
@@ -212,8 +213,8 @@ Yes. Edit `config/moa-presets.yaml` — change `provider` and `model` values.
 Re-run `python3 scripts/setup.py`. See Customizing Models section above.
 
 ### Does this work on Windows?
-Yes. Hermes Agent supports Windows natively. Setup uses choco for package
-installs where available.
+Yes. Hermes Agent supports Windows natively. Setup prints OS-specific
+install instructions for any missing tools.
 
 ### How do I update the skill?
 `git pull && python3 scripts/setup.py --resume <path>`
@@ -223,8 +224,9 @@ Convert to PDF first (`pandoc resume.docx -o resume.pdf` or File → Export
 as PDF), then provide the PDF to `--resume`.
 
 ### I already have MoA presets. Will setup overwrite them?
-No. Setup detects existing presets and only adds missing ones. A backup is
-saved to `~/.hermes/config.yaml.bak`.
+No. For fresh configurations, setup merges the defaults and creates a
+backup (`~/.hermes/config.yaml.bak`). For existing MoA sections, setup
+prints the presets for manual addition to avoid YAML merge issues.
 
 ### How do I change models after setup?
 Edit `config/moa-presets.yaml` and run `python3 scripts/setup.py --resume <path>`
