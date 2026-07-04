@@ -197,10 +197,10 @@ analysis and audit reports. Only the format you selected is produced.
               └─────────────────────┘
                           │
                           ▼
-              ┌───────────────────────┐
-              │ Templates & PDF (3 styles)│
-              │ Present final output  │
-              └───────────────────────┘
+              ┌─────────────────────────────┐
+              │ Templates & PDF (3 styles) │
+              │   Present final output     │
+              └─────────────────────────────┘
 ```
 
 ## Files
