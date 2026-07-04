@@ -1,9 +1,10 @@
-// modern-cover.typ — Sans-serif cover letter with accent
-#set page(margin: (x: 2.2cm, y: 2cm), paper: "us-letter")
-#set text(font: ("Inter", "Helvetica Neue", "Arial"), size: 10.5pt, fallback: true)
-#set par(leading: 0.6em)
+// modern-cover.typ — Sans-serif cover letter with accent and clean spacing
 
 #let accent = rgb("2563eb")
+
+#set page(margin: (x: 2.2cm, y: 2cm), paper: "us-letter")
+#set text(font: ("Inter", "Helvetica Neue", "Arial"), size: 10.5pt, fallback: true)
+#set par(leading: 0.65em, justify: false)
 
 #show heading.where(level: 1): it => {
   set align(right)

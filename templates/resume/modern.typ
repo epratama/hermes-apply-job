@@ -1,46 +1,50 @@
-// modern.typ — Sans-serif resume with blue accent and left sidebar
-// Inspired by: brilliant-cv, neat-cv (Awesome-CV style)
+// modern.typ — Clean sans-serif resume with accent color and spacing discipline
+// Designed to look professional, modern, and human — not AI-generated.
 
-#set page(margin: (left: 0.5in, right: 0.8in, top: 0.7in, bottom: 0.7in), paper: "us-letter")
+#let accent = rgb("2563eb")    // blue
+#let muted  = rgb("555555")
+#let dark   = rgb("1a1a1a")
+
+#set page(margin: (x: 2.2cm, y: 1.8cm), paper: "us-letter")
 #set text(font: ("Inter", "Helvetica Neue", "Arial"), size: 10pt, fallback: true)
-#set par(leading: 0.55em)
+#set par(leading: 0.55em, justify: false)
 
-#let accent = rgb("2563eb")
-#let muted = rgb("555555")
-
-// Section headers — accent color, uppercase, ruled
-#show heading.where(level: 2): it => {
-  v(1.2em)
-  set text(size: 11pt, weight: "bold", fill: accent)
-  smallcaps(it)
-  v(0.2em)
-  line(length: 100%, stroke: 1.2pt + accent)
-  v(0.3em)
+// ── Header — bold name, muted contact on two lines ──────
+#show heading.where(level: 1): it => {
+  set align(center)
+  set text(size: 24pt, weight: "bold", fill: dark)
+  v(0.8em)
+  it
+  v(0.15em)
+  line(length: 25%, stroke: 1.2pt + accent)
+  v(0.7em)
 }
 
-// Sub-headings — bold, muted company/date on same line
+// ── Section headers — uppercase, accent color, crisp rule ──
+#show heading.where(level: 2): it => {
+  v(1.3em)
+  set text(size: 10.5pt, weight: "bold", fill: accent)
+  text(tracking: 2.5pt)[#smallcaps(it)]
+  v(0.25em)
+  line(length: 100%, stroke: 1pt + accent)
+  v(0.4em)
+}
+
+// ── Job titles — bold, with muted date/company on next line ──
 #show heading.where(level: 3): it => {
   v(0.8em)
-  set text(size: 10.5pt, weight: "bold")
+  set text(size: 10.5pt, weight: "bold", fill: dark)
   it
 }
 
-// Bullet lists — tight, clean spacing
+// ── Bullet lists — tight, readable, with accent markers ──
 #show list: it => {
-  set par(leading: 0.35em)
+  set par(leading: 0.4em)
   set text(size: 10pt, fill: rgb("333333"))
   it
 }
 
-// Header styling
-#show heading.where(level: 1): it => {
-  set align(center)
-  set text(size: 24pt, weight: "bold")
-  v(1em)
-  it
-  v(0.2em)
-  line(length: 40%, stroke: 1.2pt + accent)
-  v(0.5em)
-}
+// ── Contact line — auto-styled by heading(level: 1) ─────
+#show par: set text(fill: rgb("333333"))
 
 {{CONTENT}}
