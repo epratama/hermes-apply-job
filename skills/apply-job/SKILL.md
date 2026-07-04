@@ -42,8 +42,11 @@ You are the orchestrator. Execute each step in order. Switch MoA presets before 
 
 1. Extract the job-listing URL from the `/apply-job` command argument.
 2. Verify `resume.pdf` exists in the project root. If not, stop and tell the user to place it there.
-3. Switch model to MoA preset `resume-analyzer`: `/model resume-analyzer --provider moa`
-4. Spawn a subagent with toolsets `[terminal, web]`. Give it this exact prompt:
+3. Check that a PDF reader is available (pdftotext or pdfplumber). If neither is found,
+   warn the user: "No PDF reader found. Install pdftotext or pdfplumber to extract
+   text from resume.pdf. Continuing — the Writer may need your help reading contact info."
+4. Switch model to MoA preset `resume-analyzer`: `/model resume-analyzer --provider moa`
+5. Spawn a subagent with toolsets `[terminal, web]`. Give it this exact prompt:
 
 ```
 Read the job listing at <URL>. Extract the company name and role title first,
@@ -67,11 +70,11 @@ If the JD is partially parseable, extract what you can, clearly note what is mis
 and save the partial analysis. The orchestrator will ask the user to paste the full JD.
 ```
 
-5. Wait for the subagent to finish. Verify `analysis.md` was created.
-6. Extract the company name and role from the first two lines of `analysis.md`.
+6. Wait for the subagent to finish. Verify `analysis.md` was created.
+7. Extract the company name and role from the first two lines of `analysis.md`.
    These will be used as `<company>-<role>` in all subsequent steps.
-7. Read `analysis.md` to confirm it's thorough. If it missed major sections (e.g., no responsibilities listed, no skills), re-spawn the analyzer with a reminder to be thorough.
-8. Switch model back to your default: `/model default --provider moa`
+8. Read `analysis.md` to confirm it's thorough. If it missed major sections (e.g., no responsibilities listed, no skills), re-spawn the analyzer with a reminder to be thorough.
+9. Switch model back to your default: `/model default --provider moa`
 
 ### Step 2 — Resume Writer
 
@@ -212,8 +215,10 @@ Output format:
 ```
 
 3. Wait for the subagent to finish.
-4. Read the audit. If score ≥ 90, skip to Step 6.
-5. If fabrication is detected, flag it to the user before proceeding.
+4. Read the audit. If fabrication is detected, flag it to the user and
+   proceed to the consortium loop (Step 5) regardless of score — do not
+   skip to Step 6 until fabrication is resolved.
+   If score ≥ 90 and no fabrication was detected, skip to Step 6.
 
 ### Step 5 — Consortium Loop
 
@@ -248,25 +253,32 @@ Also fix any AI writing patterns flagged by the auditor (filler phrases, adverbs
 2. Convert based on the format:
 
    - **md**: no conversion. Present `.md` files as final output.
-   - **docx**: `pandoc Resume.md -o Resume.docx` and same for CoverLetter. Done.
+    - **docx**: `pandoc tailored-resumes/<company>-<role>/Resume.md -o tailored-resumes/<company>-<role>/Resume.docx` and same for CoverLetter. Done.
    - **pdf**: Generate with Typst templates (see sub-steps below).
        If `typst` is not installed, fall back to pandoc + wkhtmltopdf
        (single basic PDF, no template selection). Print install hint.
 
 3. **PDF — Template generation** (when format is pdf and typst is available):
 
-   a. Extract candidate name and contact from `analysis.md` (lines 1-2).
+    a. Read `tailored-resumes/<company>-<role>/Resume.md`.
+       The first `# ` heading is the candidate's name. The text between
+       that heading and the first `## ` section header is the candidate's
+       contact info (email, phone, location). Use these as `{{NAME}}` and
+       `{{CONTACT}}`.
 
-   b. Convert markdown to raw Typst:
-      `pandoc tailored-resumes/<company>-<role>/Resume.md -t typst -o /tmp/resume-body.typ`
-      `pandoc tailored-resumes/<company>-<role>/CoverLetter.md -t typst -o /tmp/cover-body.typ`
+    b. Convert markdown to raw Typst:
+       `pandoc tailored-resumes/<company>-<role>/Resume.md -t typst -o /tmp/resume-body.typ`
+       `pandoc tailored-resumes/<company>-<role>/CoverLetter.md -t typst -o /tmp/cover-body.typ`
 
-   c. For each template in {classic, modern, minimal}:
-      - Read `templates/resume/<name>.typ` and `templates/coverletter/<name>.typ`
-      - Replace `{{NAME}}` and `{{CONTACT}}` with extracted values
-      - Replace `{{CONTENT}}` with the raw typst body
-      - `typst compile` → `tailored-resumes/<company>-<role>/<name>-resume.pdf`
-      - Same for cover letter → `<name>-coverletter.pdf`
+    c. For each template name: classic, modern, and minimal:
+       - Read the template: `templates/resume/<name>.typ` and
+         `templates/coverletter/<name>.typ`
+       - Use string replacement: swap `{{NAME}}` with the candidate name,
+         `{{CONTACT}}` with the contact info, `{{CONTENT}}` with the
+         Typst body. Write the result to `/tmp/<name>-resume.typ` and
+         `/tmp/<name>-cover.typ`.
+       - Compile: `typst compile /tmp/<name>-resume.typ tailored-resumes/<company>-<role>/<name>-resume.pdf`
+       - Same for cover: `typst compile /tmp/<name>-cover.typ tailored-resumes/<company>-<role>/<name>-coverletter.pdf`
 
    d. Print selection prompt:
 
@@ -297,7 +309,7 @@ Reply with the template name or number (1/2/3).
    f. On selection:
       - Rename `<chosen>-resume.pdf` → `Resume.pdf`
       - Rename `<chosen>-coverletter.pdf` → `CoverLetter.pdf`
-      - Delete the other 4 PDFs
+      - Delete the 4 PDFs for the two templates NOT chosen
 
 4. Print final summary:
 
@@ -315,6 +327,8 @@ Files: tailored-resumes/<company>-<role>/Resume.pdf, CoverLetter.pdf
 - Subagents timeout after 50 iterations by default. Complex audits may need more. If a subagent times out, re-spawn it with a narrower scope.
 - Fabrication is the hardest failure mode. Auditor must cross-reference every major claim against `resume.pdf`. If uncertain, flag it.
 - The `<company>-<role>` slug is derived from the analysis. If the Analyzer fails to extract these, use a fallback like `job-<timestamp>`.
+- If `typst` or `pandoc` is not installed when generating PDFs, fall back to markdown output and print the install command.
+- If no PDF reader (`pdftotext` / `pdfplumber`) is available when reading `resume.pdf`, the Writer subagent may not extract contact info. Continue with markdown — the pipeline will ask for any missing values.
 
 ## Verification
 
