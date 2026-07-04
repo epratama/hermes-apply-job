@@ -121,13 +121,40 @@ def check_toolsets():
             _enable_toolset(t)
 
 
+def _detect_package_manager():
+    """Return (name, install_template) or (None, None)."""
+    if IS_MACOS and shutil.which("brew"):
+        return "brew", "brew install {}"
+    if IS_LINUX:
+        for mgr, tmpl in [("apt-get", "sudo apt-get install -y {}"),
+                          ("dnf", "sudo dnf install -y {}"),
+                          ("pacman", "sudo pacman -S --noconfirm {}")]:
+            if shutil.which(mgr):
+                return mgr, tmpl
+    if IS_WINDOWS and shutil.which("choco"):
+        return "choco", "choco install {} -y"
+    return None, None
+
+
 def _check_tool(name, hint, url, output_format):
-    """Check one tool. Print OS-specific install instructions if missing.
-    Returns True if found, False otherwise."""
+    """Check one tool. If --yes and missing, attempt silent install.
+    Otherwise print OS-specific install instructions.
+    Returns True if found/installed, False otherwise."""
     if shutil.which(name):
         ok(f"{name} installed")
         return True
     err(f"{name} not found (needed for {output_format} output)")
+    # ponytail: --yes agent path — attempt install via detected package manager
+    if _AUTO_YES:
+        mgr, tmpl = _detect_package_manager()
+        if mgr:
+            rc, _ = run(tmpl.format(name) + f" 2>{DEVNULL}")
+            if rc == 0:
+                ok(f"{name} installed via {mgr}")
+                return True
+            warn(f"Could not install {name} via {mgr}")
+        else:
+            warn(f"No package manager detected — cannot auto-install {name}")
     if IS_MACOS:
         warn(f"Install manually: brew install {hint}")
     elif IS_LINUX:
