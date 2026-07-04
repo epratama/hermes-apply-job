@@ -143,10 +143,10 @@ analysis and audit reports. Only the format you selected is produced.
               └─────────────────────┘
                           │
                           ▼
-              ┌─────────────────────┐
-              │ Convert (md/docx/pdf)│
-              │ Present final output │
-              └─────────────────────┘
+              ┌───────────────────────┐
+              │ Convert (md/docx/pdf) │
+              │ Present final output  │
+              └───────────────────────┘
 ```
 
 ## Files
