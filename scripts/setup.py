@@ -37,6 +37,8 @@ GREEN_CHECK  = f"{C_GREEN}\u2713{C_RESET}"
 YELLOW_WARN  = f"{C_YELLOW}\u26a0{C_RESET}"
 RED_CROSS    = f"{C_RED}\u2717{C_RESET}"
 
+_AUTO_YES = False  # set by --yes flag for unattended agent setup
+
 
 def run(cmd, capture=True):
     try:
@@ -73,6 +75,8 @@ def err(msg):
 
 
 def ask(msg):
+    if _AUTO_YES:
+        return True
     answer = input(f"  {msg} [Y/n]: ").strip().lower()
     return answer in ("", "y", "yes")
 
@@ -301,7 +305,12 @@ def main():
     parser.add_argument("--resume", required=True, help="Path to your resume PDF")
     parser.add_argument("--format", default="md", choices=["md", "docx", "pdf"],
                         help="Output format (default: md)")
+    parser.add_argument("--yes", "-y", action="store_true",
+                        help="Skip all prompts (for automated/agent-driven setup)")
     args = parser.parse_args()
+
+    global _AUTO_YES
+    _AUTO_YES = args.yes
 
     url = "github.com/epratama/hermes-apply-job"
     w = len(url) + 4

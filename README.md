@@ -5,32 +5,85 @@ Mixture of Agents (MoA) and a multi-agent consortium pipeline.
 
 ## Quick Start
 
+You'll need Python 3, git, and Hermes Agent.
+
+### 1. Install Hermes Agent — skip if already installed
+
+```bash
+hermes --version   # verify it's on your PATH
+```
+If not installed: [hermes-agent.nousresearch.com](https://hermes-agent.nousresearch.com/)
+
+### 2. Configure a model provider — skip if already configured
+
+```bash
+hermes setup                 # first time only
+hermes model                 # verify: shows your current provider/model
+```
+Default presets use OpenRouter. See [Customizing Models](#customizing-models)
+to use a different provider.
+
+### 3. Prepare your resume as a PDF — see [Preparing Your Resume](#preparing-your-resume)
+
+### 4. Clone and set up
+
 ```bash
 git clone https://github.com/epratama/hermes-apply-job && cd hermes-apply-job
-python3 scripts/setup.py --resume ~/my-resume.pdf --format pdf
-hermes
-/apply-job https://example.com/jobs/12345
+python3 scripts/setup.py --resume ~/your-resume.pdf
 ```
 
-## Prerequisites
+Start with markdown (the default). Add `--format pdf` once you have
+pandoc + wkhtmltopdf installed.
 
-- **[Hermes Agent](https://hermes-agent.nousresearch.com/)** v0.18+
-- **A model provider** configured (run `hermes setup` to configure)
-  (default presets use OpenRouter; edit `config/moa-presets.yaml` to use your own)
-- **pandoc** (for docx/pdf output) — install with your system package manager:
-  ```bash
-  brew install pandoc       # macOS
-  apt install pandoc        # Linux
-  choco install pandoc      # Windows
-  ```
-- **wkhtmltopdf** (for pdf output):
-  ```bash
-  brew install wkhtmltopdf       # macOS
-  apt install wkhtmltopdf        # Linux
-  choco install wkhtmltopdf      # Windows
-  ```
+For an AI agent to run setup unattended, add `--yes`:
 
-The setup script checks all prerequisites and prints installation instructions for missing tools.
+```bash
+python3 scripts/setup.py --resume ~/your-resume.pdf --yes
+```
+
+### 5. Verify setup
+
+```bash
+hermes skills list | grep apply-job   # should show apply-job
+hermes moa list                       # should show 3 presets
+ls resume.pdf                         # should exist
+```
+
+If any check fails, re-run `python3 scripts/setup.py --resume <path>`.
+If the skill doesn't appear, restart Hermes.
+
+### 6. Open Hermes in this directory
+
+```bash
+cd hermes-apply-job && hermes
+```
+Hermes must run from this directory — it loads `AGENTS.md` which tells
+the agent how this project works.
+
+### 7. Tailor your first application
+
+```
+/apply-job https://example.com/jobs/12345
+```
+Replace the URL with an actual job listing.
+
+## Preparing Your Resume
+
+The `--resume` flag copies your PDF into the project as `resume.pdf` — this
+is your source of truth for all tailored output. The file is gitignored and
+never committed.
+
+- **Already have a PDF?** Point `--resume` to it:
+  `python3 scripts/setup.py --resume ~/Documents/my-resume.pdf`
+- **Word or Pages?** Convert first:
+  - macOS: File → Export as PDF, or `pandoc resume.docx -o resume.pdf`
+  - Linux: `pandoc resume.docx -o resume.pdf`
+  - Windows: File → Save As → PDF, or `pandoc resume.docx -o resume.pdf`
+- **No resume yet?** Write one first. The pipeline tailors existing content
+  to job descriptions — it doesn't create a resume from scratch.
+
+If `resume.pdf` is missing when you run `/apply-job`, the pipeline stops
+and asks you to place it there.
 
 ## What the Setup Script Does
 
