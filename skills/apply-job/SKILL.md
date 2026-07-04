@@ -38,15 +38,26 @@ If these presets are not configured, stop and tell the user to add them.
 
 You are the orchestrator. Execute each step in order. Switch MoA presets before spawning subagents.
 
-### Step 1 — Job Analyzer
+### Step 0 — Pre-Flight Checks
+
+1. Verify `resume.pdf` exists in the project root. If not, stop and tell the user to place it there.
+2. Convert `resume.pdf` to text once (all subagents will use this file):
+   Try `pdfplumber` first (Python library, always available):
+   `python3 -c "
+   import pdfplumber
+   with pdfplumber.open('resume.pdf') as pdf:
+       text = '\n'.join(p.extract_text() or '' for p in pdf.pages)
+   open('/tmp/resume-base.txt', 'w').write(text)"`
+   If `pdfplumber` fails, try `pdftotext`:
+   `pdftotext resume.pdf /tmp/resume-base.txt`
+   If neither tool is available, stop and tell the user: "Install pdfplumber
+   (pip install pdfplumber) or pdftotext to extract text from your resume."
+
+### Step 1 — Job Analyzer (max 2 retries)
 
 1. Extract the job-listing URL from the `/apply-job` command argument.
-2. Verify `resume.pdf` exists in the project root. If not, stop and tell the user to place it there.
-3. Check that a PDF reader is available (pdftotext or pdfplumber). If neither is found,
-   warn the user: "No PDF reader found. Install pdftotext or pdfplumber to extract
-   text from resume.pdf. Continuing — the Writer may need your help reading contact info."
-4. Switch model to MoA preset `resume-analyzer`: `/model resume-analyzer --provider moa`
-5. Spawn a subagent with toolsets `[terminal, web]`. Give it this exact prompt:
+2. Switch model to MoA preset `resume-analyzer`: `/model resume-analyzer --provider moa`
+3. Spawn a subagent with toolsets `[terminal, web]`. Give it this exact prompt:
 
 ```
 Read the job listing at <URL>. Extract the company name and role title first,
@@ -70,20 +81,22 @@ If the JD is partially parseable, extract what you can, clearly note what is mis
 and save the partial analysis. The orchestrator will ask the user to paste the full JD.
 ```
 
-6. Wait for the subagent to finish. Verify `analysis.md` was created.
-7. Extract the company name and role from the first two lines of `analysis.md`.
+4. Wait for the subagent to finish. Verify `analysis.md` was created.
+5. Extract the company name and role from the first two lines of `analysis.md`.
    These will be used as `<company>-<role>` in all subsequent steps.
-8. Read `analysis.md` to confirm it's thorough. If it missed major sections (e.g., no responsibilities listed, no skills), re-spawn the analyzer with a reminder to be thorough.
-9. Switch model back to your default: `/model default --provider moa`
+6. Read `analysis.md` to confirm it's thorough. If it missed major sections (e.g., no
+   responsibilities listed, no skills), re-spawn the analyzer with a reminder (max 2 attempts total).
+   If the 2nd attempt also misses sections, continue with what's available.
+7. Switch model back to your default: `/model default --provider moa`
 
-### Step 2 — Resume Writer
+### Step 2 — Resume Writer (max 1 retry)
 
 1. Switch model to MoA preset `resume-writer`: `/model resume-writer --provider moa`
 2. Spawn a subagent with toolsets `[terminal]`. Give it this exact prompt:
 
 ```
 Read the job analysis at tailored-resumes/<company>-<role>/analysis.md.
-Read the base resume at resume.pdf.
+Read the base resume text from /tmp/resume-base.txt.
 
 Write a tailored resume saved to tailored-resumes/<company>-<role>/Resume.md.
 
@@ -94,23 +107,23 @@ Rules:
 - Keep to 2 pages equivalent in markdown
 - Use the JD's language style (enterprise, startup, academic)
 - NEVER fabricate experience, degrees, certifications, or dates
-- All achievements must be traceable to resume.pdf
+- All achievements must be traceable to /tmp/resume-base.txt
 - Avoid AI writing patterns: no filler phrases, no adverbs, no passive voice, no em dashes, no vague declaratives
 - If the JD asks for something the candidate genuinely lacks, do not mention it in the resume
-- Use real contact info only from resume.pdf
+- Use real contact info only from /tmp/resume-base.txt
 ```
 
-3. Wait for the subagent to finish. Verify the file was created.
+3. Wait for the subagent to finish (max 1 retry if file not created). Verify the file was created.
 4. Switch model back to default.
 
-### Step 3 — Cover Letter Writer
+### Step 3 — Cover Letter Writer (max 1 retry)
 
 1. Switch model to MoA preset `resume-writer`: `/model resume-writer --provider moa`
 2. Spawn a subagent with toolsets `[terminal]`. Give it this exact prompt:
 
 ```
 Read the job analysis at tailored-resumes/<company>-<role>/analysis.md.
-Read the base resume at resume.pdf.
+Read the base resume text from /tmp/resume-base.txt.
 
 Write a tailored cover letter saved to tailored-resumes/<company>-<role>/CoverLetter.md.
 
@@ -121,14 +134,14 @@ Rules:
 - Address any obvious gap as a growth area, not an invention
 - 1 page equivalent in markdown
 - NEVER fabricate experience or credentials
-- All achievements must be traceable to resume.pdf
+- All achievements must be traceable to /tmp/resume-base.txt
 - Avoid AI writing patterns: no filler phrases, no adverbs, no passive voice, no em dashes, no vague declaratives
 ```
 
-3. Wait for the subagent to finish. Verify the file was created.
+3. Wait for the subagent to finish (max 1 retry if file not created). Verify the file was created.
 4. Switch model back to default.
 
-### Step 4 — Auditor
+### Step 4 — Auditor (max 1 retry)
 
 1. Switch model to MoA preset `resume-auditor`: `/model resume-auditor --provider moa`
 2. Spawn a subagent with toolsets `[terminal]`. Give it this exact prompt:
@@ -138,7 +151,7 @@ Read:
 - tailored-resumes/<company>-<role>/analysis.md (job requirements)
 - tailored-resumes/<company>-<role>/Resume.md (tailored resume)
 - tailored-resumes/<company>-<role>/CoverLetter.md (tailored cover letter)
-- resume.pdf (base resume — ground truth)
+- /tmp/resume-base.txt (base resume — ground truth)
 
 Audit both documents and save your report to tailored-resumes/<company>-<role>/audit-round-<N>.md
 (where N is the round number, starting at 1).
@@ -151,7 +164,7 @@ Score each criteria from 0-100 and return an overall score (average of all):
 2. ATS Parsability: Standard section headings, no images/tables/icons, plain text.
    Deduct for any non-standard formatting, missing section labels, or complex structures.
 
-3. No Fabrication: Cross-reference every claim in the resume and cover letter against resume.pdf.
+3. No Fabrication: Cross-reference every claim in the resume and cover letter against /tmp/resume-base.txt.
    Deduct heavily for any claim not in the base resume. Flag exact fabricated lines.
 
 4. Length: Resume ≤2 pages, cover letter ≤1 page (markdown equivalent, ~80 lines per page).
@@ -189,7 +202,7 @@ Output format:
 - Fixes: [list]
 
 ### 3. No Fabrication: X/100
-- Flagged claims: [list exact lines that aren't in resume.pdf]
+- Flagged claims: [list exact lines that aren't in /tmp/resume-base.txt]
 - Verdict: [pass if none, fail with details otherwise]
 
 ### 4. Length: X/100
@@ -214,7 +227,7 @@ Output format:
 - Fixes: [rewrite suggestions to sound more human]
 ```
 
-3. Wait for the subagent to finish.
+3. Wait for the subagent to finish (max 1 retry if report not created).
 4. Read the audit. If fabrication is detected, flag it to the user and
    proceed to the consortium loop (Step 5) regardless of score — do not
    skip to Step 6 until fabrication is resolved.
@@ -277,8 +290,15 @@ Also fix any AI writing patterns flagged by the auditor (filler phrases, adverbs
          `{{CONTACT}}` with the contact info, `{{CONTENT}}` with the
          Typst body. Write the result to `/tmp/<name>-resume.typ` and
          `/tmp/<name>-cover.typ`.
-       - Compile: `typst compile /tmp/<name>-resume.typ tailored-resumes/<company>-<role>/<name>-resume.pdf`
-       - Same for cover: `typst compile /tmp/<name>-cover.typ tailored-resumes/<company>-<role>/<name>-coverletter.pdf`
+        - Compile: `typst compile /tmp/<name>-resume.typ tailored-resumes/<company>-<role>/<name>-resume.pdf`
+        - Same for cover: `typst compile /tmp/<name>-cover.typ tailored-resumes/<company>-<role>/<name>-coverletter.pdf`
+
+       If `typst compile` fails for any template:
+       - Print the error and skip that template
+       - Delete the failed PDF file if it was partially created
+       - Continue with the remaining templates
+       - If ALL three templates fail, fall back to pandoc + wkhtmltopdf
+         for a single basic PDF, keeping the markdown as backup
 
    d. Print selection prompt:
 
@@ -310,6 +330,9 @@ Reply with the template name or number (1/2/3).
       - Rename `<chosen>-resume.pdf` → `Resume.pdf`
       - Rename `<chosen>-coverletter.pdf` → `CoverLetter.pdf`
       - Delete the 4 PDFs for the two templates NOT chosen
+      - If format is docx or pdf: delete the intermediate Resume.md and
+        CoverLetter.md (final output is in the chosen format).
+        Keep: analysis.md and all audit-round-*.md.
 
 4. Print final summary:
 
@@ -320,15 +343,38 @@ Final Audit Score: X/100 (Round N)
 Files: tailored-resumes/<company>-<role>/Resume.pdf, CoverLetter.pdf
 ```
 
+### Step 6g — Clean Temporary Files
+
+Remove all temporary files (no prompt — automatic):
+
+```
+python3 -c "
+import os, glob
+files = ['/tmp/resume-base.txt', '/tmp/resume-body.typ', '/tmp/cover-body.typ']
+for name in ['classic', 'modern', 'minimal']:
+    files.append(f'/tmp/{name}-resume.typ')
+    files.append(f'/tmp/{name}-cover.typ')
+for f in files:
+    try: os.remove(f)
+    except FileNotFoundError: pass
+"
+print('Cleanup: removed temporary files')
+```
+
 ## Pitfalls
 
 - If MoA presets are not configured, stop early and tell the user: "MoA presets are missing. Run `python3 scripts/setup.py` to configure them."
 - If `resume.pdf` is not found in the project root, stop and ask the user to place it there.
-- Subagents timeout after 50 iterations by default. Complex audits may need more. If a subagent times out, re-spawn it with a narrower scope.
-- Fabrication is the hardest failure mode. Auditor must cross-reference every major claim against `resume.pdf`. If uncertain, flag it.
-- The `<company>-<role>` slug is derived from the analysis. If the Analyzer fails to extract these, use a fallback like `job-<timestamp>`.
-- If `typst` or `pandoc` is not installed when generating PDFs, fall back to markdown output and print the install command.
-- If no PDF reader (`pdftotext` / `pdfplumber`) is available when reading `resume.pdf`, the Writer subagent may not extract contact info. Continue with markdown — the pipeline will ask for any missing values.
+- Subagents timeout after 50 iterations by default. If a subagent times out, re-spawn it
+  (respecting the max retry limit for that step) with a narrower scope.
+- Fabrication is the hardest failure mode. Auditor must cross-reference every major claim
+  against `/tmp/resume-base.txt`. If uncertain, flag it.
+- The `<company>-<role>` slug is derived from the analysis. If the Analyzer fails to
+  extract these, use a fallback like `job-<timestamp>`.
+- If `typst` or `pandoc` is not installed when generating PDFs, fall back to markdown
+  output and print the install command.
+- If a template compile fails (`typst compile` error), the pipeline skips that template
+  and continues with the remaining ones. If all fail, falls back to wkhtmltopdf.
 
 ## Verification
 
