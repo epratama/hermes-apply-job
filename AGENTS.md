@@ -17,6 +17,7 @@ using a multi-agent MoA consortium orchestrated by Hermes.
 - `scripts/setup.py` — one-command setup (skill install + MoA config + resume copy)
 - `config/moa-presets.yaml` — MoA model configuration
 - `tailored-resumes/` — output directory, one subfolder per application
+- `tests/test_setup.py` — setup script self-check tests
 
 ## Invocation
 

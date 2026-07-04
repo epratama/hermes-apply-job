@@ -162,6 +162,8 @@ hermes-apply-job/
     moa-presets.yaml          ← MoA model configuration
   scripts/
     setup.py                  ← One-command setup
+  tests/
+    test_setup.py             ← Setup script self-check
   skills/
     apply-job/
       SKILL.md                ← The skill source
