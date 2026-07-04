@@ -111,6 +111,17 @@ Rules:
 - Avoid AI writing patterns: no filler phrases, no adverbs, no passive voice, no em dashes, no vague declaratives
 - If the JD asks for something the candidate genuinely lacks, do not mention it in the resume
 - Use real contact info only from /tmp/resume-base.txt
+- DO NOT add "targeting", "seeking", or "applying for" in the resume
+  header. The tailoring should show through content, not a label.
+- Each bullet is one achievement, not a paragraph. Split bullets that wrap
+  beyond 2 lines. If splitting creates extra page space, trim the least
+  relevant bullets rather than keeping dense text.
+- Vary bullet length: some 1-line, some 2-line. Monotone rhythm = AI tell.
+- Vary sentence openers — don't start every bullet with the same verb
+  pattern (e.g., "Led...", "Designed...", "Built..."). Sound like a senior
+  professional describing real work, not a template.
+- Grammar must be flawless: proper articles (a/an/the), consistent tense
+  (past for completed work, present for current role), no fragments.
 ```
 
 3. Wait for the subagent to finish (max 1 retry if file not created). Verify the file was created.
@@ -128,11 +139,20 @@ Read the base resume text from /tmp/resume-base.txt.
 Write a tailored cover letter saved to tailored-resumes/<company>-<role>/CoverLetter.md.
 
 Rules:
-- 3-4 paragraphs: opening hook, 2 body paragraphs mapping top candidate matches to the role's stated needs, closing with call to action
-- Name the company and role explicitly — no generic templates
-- If the JD does not name a hiring manager, use "Hiring Team" as salutation
-- Address any obvious gap as a growth area, not an invention
-- 1 page equivalent in markdown
+- Keep it tight: 3 short paragraphs, 250-300 words total (~2/3 page in
+  standard format). A letter that fills the page looks desperate — white
+  space signals confidence. Do not pad to fill space.
+- Paragraph 1: why this role caught your eye (2-3 sentences). No "I am
+  writing to apply" — start mid-sentence if it sounds more human.
+  Paragraph 2: your best match — one specific achievement tied to their
+  stated need (3-4 sentences). Paragraph 3: call to action (2 sentences).
+- Format: single-spaced paragraphs, blank line between each. No bullet
+  points. No walls of text. Maximum 1 page — shorter is better.
+- Name the company and role explicitly — no generic templates.
+- If the JD does not name a hiring manager, use "Hiring Team" as salutation.
+- Address any obvious gap as a growth area, not an invention.
+- Grammar must be flawless. Read each sentence aloud — if it sounds like
+  a template, rewrite it.
 - NEVER fabricate experience or credentials
 - All achievements must be traceable to /tmp/resume-base.txt
 - Avoid AI writing patterns: no filler phrases, no adverbs, no passive voice, no em dashes, no vague declaratives
@@ -170,8 +190,11 @@ Score each criteria from 0-100 and return an overall score (average of all):
 4. Length: Resume ≤2 pages, cover letter ≤1 page (markdown equivalent, ~80 lines per page).
    Deduct proportionally for over-length documents.
 
-5. Tone: Professional, active voice, results-oriented.
-   Deduct for passive voice, weak verbs, vague claims without metrics.
+5. Tone: Professional, reads like a human wrote it. Deduct for:
+   - Passive voice, weak verbs, vague claims without metrics
+   - Template language ("results-driven professional," "utilized cutting-edge")
+   - Robotic formulaic phrasing (every bullet starts the same way)
+   - Grammar errors, inconsistent tense, awkward constructions
 
 6. Personalization: Cover letter references specific JD details, not generic phrases.
    Deduct for templated language, missing company/role name, generic closings.
