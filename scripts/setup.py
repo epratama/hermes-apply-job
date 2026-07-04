@@ -10,10 +10,21 @@ merges MoA presets into ~/.hermes/config.yaml, and validates with Hermes.
 
 import argparse
 import os
+import platform
 import shutil
 import subprocess
 import sys
 from pathlib import Path
+
+SYSTEM = platform.system()           # "Darwin", "Linux", "Windows"
+IS_WINDOWS = SYSTEM == "Windows"
+IS_MACOS = SYSTEM == "Darwin"
+IS_LINUX = SYSTEM == "Linux"
+DEVNULL = "NUL" if IS_WINDOWS else "/dev/null"
+
+HERMES_URL = "https://hermes-agent.nousresearch.com/"
+PANDOC_URL = "https://pandoc.org/installing.html"
+WKHTML_URL = "https://wkhtmltopdf.org/downloads.html"
 
 
 def run(cmd, capture=True):
@@ -23,6 +34,66 @@ def run(cmd, capture=True):
         return result.returncode, result.stdout.strip() if capture else ""
     except FileNotFoundError:
         return -1, ""
+
+
+def _which(cmd):
+    """Cross-platform command location (which on Unix, where on Windows)."""
+    rc, _ = run(f"which {cmd}")
+    if rc == 0:
+        return True
+    if IS_WINDOWS:
+        rc, _ = run(f"where {cmd}")
+        return rc == 0
+    return False
+
+
+def _hermes_home():
+    """Hermes home directory on any OS."""
+    env_home = os.environ.get("HERMES_HOME")
+    if env_home:
+        return Path(env_home)
+    if IS_WINDOWS:
+        base = os.environ.get("LOCALAPPDATA") or str(Path.home() / "AppData" / "Local")
+        return Path(base) / "hermes"
+    return Path.home() / ".hermes"
+
+
+def _detect_package_manager():
+    """Return (name, install_template) or (None, None)."""
+    if IS_MACOS and _which("brew"):
+        return "brew", "brew install {}"
+    if IS_LINUX:
+        for mgr, tmpl in [("apt-get", "sudo apt-get install -y {}"),
+                          ("dnf", "sudo dnf install -y {}"),
+                          ("pacman", "sudo pacman -S --noconfirm {}")]:
+            if _which(mgr):
+                return mgr, tmpl
+    if IS_WINDOWS and _which("choco"):
+        return "choco", "choco install {} -y"
+    return None, None
+
+
+def _auto_install(pkg_name, pkg_desc, pkg_url):
+    """Install a package using the detected package manager.
+    If no manager is found, print OS-specific manual instructions.
+    Returns True if installed, False otherwise."""
+    mgr, tmpl = _detect_package_manager()
+    if mgr:
+        if ask(f"Install {pkg_desc}?"):
+            rc, _ = run(tmpl.format(pkg_name) + f" 2>{DEVNULL}")
+            if rc == 0:
+                ok(f"{pkg_desc} installed")
+                return True
+        warn(f"Install manually: {tmpl.format(pkg_name)}")
+        return False
+    err(f"No package manager detected ({pkg_desc} not installed).")
+    if IS_MACOS:
+        print(f"  Install Homebrew first, then: brew install {pkg_name}")
+    elif IS_LINUX:
+        print(f"  Install from: {pkg_url}")
+    elif IS_WINDOWS:
+        print(f"  Install from: {pkg_url}")
+    return False
 
 
 def header(text):
@@ -49,10 +120,9 @@ def ask(msg):
 def check_hermes():
     """Check Hermes Agent is installed."""
     header("Prerequisites")
-    rc, _ = run("which hermes")
-    if rc != 0:
+    if not _which("hermes"):
         err("Hermes Agent not found.")
-        print("  Install: https://hermes-agent.nousresearch.com/")
+        print(f"  Install: {HERMES_URL}")
         sys.exit(1)
     ok("Hermes Agent detected")
 
@@ -60,7 +130,7 @@ def check_hermes():
 def _enable_toolset(toolset):
     """Prompt to enable a disabled toolset."""
     if ask(f"Enable {toolset} toolset?"):
-        rc, _ = run(f"hermes tools enable {toolset} 2>/dev/null")
+        rc, _ = run(f"hermes tools enable {toolset} 2>{DEVNULL}")
         if rc == 0:
             ok(f"{toolset} enabled")
             return
@@ -70,7 +140,7 @@ def _enable_toolset(toolset):
 
 def check_toolsets():
     """Verify required toolsets are enabled."""
-    rc, out = run("hermes tools list 2>/dev/null | grep -E 'terminal|delegation|web' | grep enabled")
+    rc, out = run(f"hermes tools list 2>{DEVNULL} | grep -E 'terminal|delegation|web' | grep enabled")
     if rc != 0 or not out:
         warn("Could not verify toolsets. Ensure terminal, delegation, and web are enabled.")
         return
@@ -93,36 +163,21 @@ def check_toolsets():
 
 def _check_pandoc_installed():
     """Return True if pandoc is available, prompt install if not."""
-    rc, _ = run("which pandoc")
-    if rc == 0:
+    if _which("pandoc"):
         ok("pandoc installed")
         return True
     err("pandoc not found")
-    if ask("Install pandoc?"):
-        install_cmd = "brew install pandoc 2>/dev/null || apt install -y pandoc 2>/dev/null || choco install pandoc 2>/dev/null"
-        rc, _ = run(install_cmd)
-        if rc == 0:
-            ok("pandoc installed")
-            return True
-    warn("Install manually: brew install pandoc (or your system's package manager)")
-    return False
+    return _auto_install("pandoc", "pandoc", PANDOC_URL)
 
 
 def _check_wkhtmltopdf_installed():
     """Return True if wkhtmltopdf is available, prompt install if not.
     Returns True even if not available (non-blocking for PDF setup)."""
-    rc, _ = run("which wkhtmltopdf")
-    if rc == 0:
+    if _which("wkhtmltopdf"):
         ok("wkhtmltopdf installed")
         return True
     err("wkhtmltopdf not found (needed for PDF output)")
-    if ask("Install wkhtmltopdf?"):
-        install_cmd = "brew install wkhtmltopdf 2>/dev/null || apt install -y wkhtmltopdf 2>/dev/null || choco install wkhtmltopdf 2>/dev/null"
-        rc, _ = run(install_cmd)
-        if rc == 0:
-            ok("wkhtmltopdf installed")
-            return True
-    warn("Install manually: brew install wkhtmltopdf")
+    _auto_install("wkhtmltopdf", "wkhtmltopdf", WKHTML_URL)
     return True  # let setup continue even without wkhtmltopdf
 
 
@@ -156,6 +211,7 @@ def install_skills():
     """Install apply-job and stop-slop skills to Hermes."""
     header("Skills")
     src_dir = Path(__file__).parent.parent / "skills"
+    hermes_dir = _hermes_home()
     skills_config = [
         {"name": "apply-job", "category": "career"},
         {"name": "stop-slop", "category": "writing"},
@@ -163,16 +219,16 @@ def install_skills():
     for skill in skills_config:
         name, cat = skill["name"], skill["category"]
         src = src_dir / name
-        dst = Path.home() / ".hermes" / "skills" / cat / name
+        dst = hermes_dir / "skills" / cat / name
         if not src.exists():
             err(f"{name} skill not found at {src}")
             continue
         if dst.exists():
             shutil.rmtree(dst)
         shutil.copytree(src, dst)
-        ok(f"Installed {name} to ~/.hermes/skills/{cat}/{name}/")
+        ok(f"Installed {name} to {dst}")
 
-    rc, out = run("hermes skills list 2>/dev/null | grep -E 'apply-job|stop-slop'")
+    rc, out = run(f"hermes skills list 2>{DEVNULL} | grep -E 'apply-job|stop-slop'")
     if rc == 0:
         ok("Skills registered with Hermes")
     else:
@@ -181,7 +237,7 @@ def install_skills():
 
 def load_config():
     """Load ~/.hermes/config.yaml if it exists."""
-    config_path = Path.home() / ".hermes" / "config.yaml"
+    config_path = _hermes_home() / "config.yaml"
     if config_path.exists():
         with open(config_path) as f:
             return f.read()
@@ -206,7 +262,7 @@ def merge_moa_config(config_content, moa_content):
     (safe — avoids YAML nesting errors from string-based insertion).
     Returns True if file was modified, False if only instructions were printed.
     """
-    config_path = Path.home() / ".hermes" / "config.yaml"
+    config_path = _hermes_home() / "config.yaml"
 
     if "moa:" not in config_content or config_content.strip() == "":
         if config_content.strip():
@@ -243,7 +299,7 @@ def merge_moa_config(config_content, moa_content):
 
 def _detect_moa_presets():
     """Return set of preset names already configured in Hermes."""
-    rc, out = run("hermes moa list 2>/dev/null")
+    rc, out = run(f"hermes moa list 2>{DEVNULL}")
     if rc != 0 or not out:
         return set()
     existing = set()
@@ -270,7 +326,7 @@ def _print_missing_presets(missing, existing):
 
 def _validate_moa():
     """Run hermes moa list and print results. Return True if successful."""
-    rc, out = run("hermes moa list 2>/dev/null")
+    rc, out = run(f"hermes moa list 2>{DEVNULL}")
     if rc == 0 and out:
         ok("hermes moa list succeeded")
         for line in out.split("\n"):
@@ -312,7 +368,7 @@ def setup_moa():
 def set_output_format(output_format):
     """Set the output_format in Hermes skill config."""
     header("Output Format")
-    rc, _ = run(f"hermes config set skills.config.apply-job.output_format {output_format} 2>/dev/null")
+    rc, _ = run(f"hermes config set skills.config.apply-job.output_format {output_format} 2>{DEVNULL}")
     if rc == 0:
         ok(f"Output format set to: {output_format}")
     else:
