@@ -6,7 +6,7 @@ Mixture of Agents (MoA) and a multi-agent consortium pipeline.
 ## Quick Start
 
 ```bash
-git clone <repo-url> && cd hermes-apply-job
+git clone https://github.com/epratama/hermes-apply-job && cd hermes-apply-job
 python3 scripts/setup.py --resume ~/my-resume.pdf --format pdf
 hermes
 /apply-job https://example.com/jobs/12345
