@@ -4,18 +4,32 @@ A multi-agent pipeline orchestrated by Hermes Agent that uses Mixture of
 Agents (MoA) presets and subagents to tailor your resume and cover letter
 for a specific job listing, maximizing interview conversion.
 
+## Setup
+
+Run the setup script to install the skill and configure MoA presets:
+
+```bash
+python3 scripts/setup.py --resume <path-to-your-resume.pdf> [--format md|docx|pdf]
+```
+
+The script handles: skill installation, MoA preset configuration, toolsets,
+resume copying, and output format. Re-run anytime to update configuration.
+
+See README.md for prerequisites and troubleshooting.
+
 ## Trigger
 
 `/apply-job <job-listing-url>`
 
-Implemented as a skill named `apply-job`. Once installed, invoke via
-`/apply-job https://example.com/jobs/12345`. Hermes reads the skill and
-executes the pipeline.
+Implemented as a skill named `apply-job`. Once installed (via setup script),
+invoke via `/apply-job https://example.com/jobs/12345`. Hermes reads the
+skill and executes the pipeline.
 
 ## MoA Presets
 
-Add this to `~/.hermes/config.yaml`. Each preset uses a different set of
-models optimized for its role in the pipeline:
+Merge `config/moa-presets.yaml` into `~/.hermes/config.yaml` (the setup script
+does this automatically). Each preset uses a different set of models optimized
+for its role in the pipeline:
 
 ```yaml
 moa:
@@ -87,8 +101,8 @@ the failure immediately and stops the pipeline.
 ### Step 2 — Resume Writer (MoA: `resume-writer`)
 
 Orchestrator switches to `resume-writer`, spawns subagent. Takes the Job
-Analyzer output + your base resume (`master-resume.pdf`). Produces a tailored
-resume (`tailored-resumes/<company>-<role>/Eky_Pratama_Resume.md`):
+Analyzer output + your base resume (`resume.pdf`). Produces a tailored
+resume (`tailored-resumes/<company>-<role>/Resume.md`):
 - Reorders bullet points so most relevant experience surfaces first
 - Weaves JD keywords into descriptions naturally — no keyword stuffing
 - De-emphasizes or trims experience not relevant to this role
@@ -99,7 +113,7 @@ resume (`tailored-resumes/<company>-<role>/Eky_Pratama_Resume.md`):
 
 Orchestrator switches to `resume-writer`, spawns subagent (same MoA preset,
 different prompt). Takes the same analysis + your resume. Produces a tailored
-cover letter (`tailored-resumes/<company>-<role>/Eky_Pratama_CoverLetter.md`):
+cover letter (`tailored-resumes/<company>-<role>/CoverLetter.md`):
 - 3-4 paragraphs: opening hook, 2 body paragraphs mapping your top matches
   to their stated needs, closing with call to action
 - Names the company and role explicitly — no generic templates
@@ -114,7 +128,7 @@ documents on:
 - **Keyword coverage** — ≥85% of JD keywords present (weighted by prominence)
 - **ATS parsability** — standard section headings, no images/tables/icons,
   minimal formatting
-- **No fabrication** — all claims traceable to `master-resume.pdf`
+- **No fabrication** — all claims traceable to `resume.pdf`
 - **Length** — resume ≤2 pages, cover letter ≤1 page (markdown equivalent)
 - **Tone** — professional, active voice, results-oriented
 - **Personalization** — cover letter references specific JD details,
@@ -132,12 +146,15 @@ flagged issues, the Auditor re-scores. Loop stops when:
 
 Hermes presents the final output with a summary of what changed and why.
 
-### Step 6 — PDF Conversion (Manual)
+### Step 6 — Convert & Present Results
 
-When the markdown output is final, ask Hermes: "convert to PDF." Hermes
-converts both `.md` files to `.pdf` using the available tooling, producing:
-- `Eky_Pratama_Resume.pdf`
-- `Eky_Pratama_CoverLetter.pdf`
+Hermes reads the configured `output_format` from the skill config and converts:
+- **md**: no conversion — `.md` files are the final output
+- **docx**: pandoc converts `.md` to `.docx`
+- **pdf**: pandoc + wkhtmltopdf converts `.md` to `.pdf`
+
+If conversion tools are missing, Hermes reports the error and keeps the
+`.md` output.
 
 ## Output
 
@@ -145,19 +162,19 @@ converts both `.md` files to `.pdf` using the available tooling, producing:
 tailored-resumes/
   <company>-<role>/
     analysis.md                  # Job Analyzer output
-    Eky_Pratama_Resume.md        # Final tailored resume (markdown)
-    Eky_Pratama_CoverLetter.md   # Final tailored cover letter (markdown)
+    Resume.md / .docx / .pdf     # Final tailored resume
+    CoverLetter.md / .docx / .pdf  # Final tailored cover letter
     audit-round-1.md             # Auditor reports per round
     audit-round-2.md             # (up to 3 rounds)
     audit-round-3.md
-    Eky_Pratama_Resume.pdf       # Final PDF (manual step)
-    Eky_Pratama_CoverLetter.pdf  # Final PDF (manual step)
 ```
+
+Only the format selected via `--format` is produced (not all three).
 
 ## Guardrails (Non-Negotiable)
 
 - **Never fabricate** experience, degrees, certifications, or dates
-- All achievements must be traceable to `master-resume.pdf`
+- All achievements must be traceable to `resume.pdf`
 - If a JD asks for something you genuinely lack:
   - Resume: do not mention it
   - Cover letter: acknowledge honestly as a growth area, not a skill you claim
@@ -168,12 +185,12 @@ tailored-resumes/
 - **Inaccessible URL** — Job Analyzer reports failure, pipeline stops
 - **Non-parseable JD** — Job Analyzer surfaces what it could extract, asks
   user to paste the JD manually
-- **master-resume.pdf not found** — Pipeline stops with clear error
+- **resume.pdf not found** — Pipeline stops with clear error
 - **Auditor detects fabrication** — Flagged explicitly, Writer must remove
   before next round
 
 ## Base Resume
 
-`master-resume.pdf` in the project root. Contains 15+ years of software
-engineering experience across marketing automation, cloud infrastructure,
-AI-assisted development, and security/compliance (ISO 27001, OWASP, WCAG).
+`resume.pdf` in the project root. This is your full work history — the source
+of truth for all claims. Provided via `scripts/setup.py --resume <path>` and
+gitignored to keep your personal data out of version control.

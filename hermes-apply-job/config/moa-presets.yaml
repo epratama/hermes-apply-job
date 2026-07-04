@@ -1,0 +1,54 @@
+# ─────────────────────────────────────────────
+# Hermes Apply-Job — MoA Presets
+# ─────────────────────────────────────────────
+# Copy into ~/.hermes/config.yaml under the "moa:" key,
+# or run `python3 scripts/setup.py` to merge automatically.
+#
+# Each preset defines which models Hermes uses for each role
+# in the resume optimization pipeline. All defaults use OpenRouter.
+# Edit the model IDs below to use your own provider/models.
+#
+# See README.md for role descriptions and customization examples.
+# See https://hermes-agent.nousresearch.com/docs/user-guide/features/mixture-of-agents
+#
+# ── Presets ──────────────────────────────────
+
+moa:
+  presets:
+    # resume-analyzer — Parses job listings. One fast reference model
+    # for cheap scanning, one accurate aggregator for structured output.
+    resume-analyzer:
+      reference_models:
+        - provider: openrouter
+          model: deepseek/deepseek-v4-flash
+      aggregator:
+        provider: openrouter
+        model: deepseek/deepseek-v4-pro
+      reference_max_tokens: 600
+
+    # resume-writer — Drafts resumes and cover letters. Two reference
+    # models provide balanced creative perspectives; the aggregator
+    # produces the final unified output.
+    resume-writer:
+      reference_models:
+        - provider: openrouter
+          model: minimax/MiniMax-M3
+        - provider: openrouter
+          model: nvidia/nemotron-3-ultra
+      aggregator:
+        provider: openrouter
+        model: deepseek/deepseek-v4-pro
+      reference_max_tokens: 800
+
+    # resume-auditor — Scores output on 6 criteria. Two independent
+    # critiques feed into one verdict.
+    resume-auditor:
+      reference_models:
+        - provider: openrouter
+          model: minimax/MiniMax-M3
+        - provider: openrouter
+          model: nvidia/nemotron-3-ultra
+      aggregator:
+        provider: openrouter
+        model: deepseek/deepseek-v4-pro
+      reference_max_tokens: 600

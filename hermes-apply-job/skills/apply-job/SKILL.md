@@ -7,7 +7,12 @@ metadata:
   hermes:
     tags: [career, resume, job-search]
     category: career
-    requires_toolsets: [terminal, delegation]
+    requires_toolsets: [terminal, delegation, web]
+    config:
+      - key: output_format
+        description: "Output format for tailored documents"
+        default: "md"
+        prompt: "Output format (md, docx, or pdf)?"
 ---
 
 # Apply Job — Resume & Cover Letter Tailoring
@@ -17,7 +22,7 @@ metadata:
 When the user wants to tailor their master resume to a specific job listing.
 Triggered via `/apply-job <job-listing-url>`.
 
-The user's base resume is `master-resume.pdf` in the project root.
+The user's base resume is `resume.pdf` in the project root.
 
 ## MoA Presets
 
@@ -36,7 +41,7 @@ You are the orchestrator. Execute each step in order. Switch MoA presets before 
 ### Step 1 — Job Analyzer
 
 1. Extract the job-listing URL from the `/apply-job` command argument.
-2. Verify `master-resume.pdf` exists in the project root. If not, stop and tell the user to place it there.
+2. Verify `resume.pdf` exists in the project root. If not, stop and tell the user to place it there.
 3. Switch model to MoA preset `resume-analyzer`: `/model resume-analyzer --provider moa`
 4. Spawn a subagent with toolsets `[terminal, web]`. Give it this exact prompt:
 
@@ -75,9 +80,9 @@ and save the partial analysis. The orchestrator will ask the user to paste the f
 
 ```
 Read the job analysis at tailored-resumes/<company>-<role>/analysis.md.
-Read the base resume at master-resume.pdf.
+Read the base resume at resume.pdf.
 
-Write a tailored resume saved to tailored-resumes/<company>-<role>/Eky_Pratama_Resume.md.
+Write a tailored resume saved to tailored-resumes/<company>-<role>/Resume.md.
 
 Rules:
 - Reorder bullet points so most relevant experience surfaces first
@@ -86,9 +91,9 @@ Rules:
 - Keep to 2 pages equivalent in markdown
 - Use the JD's language style (enterprise, startup, academic)
 - NEVER fabricate experience, degrees, certifications, or dates
-- All achievements must be traceable to master-resume.pdf
+- All achievements must be traceable to resume.pdf
 - If the JD asks for something the candidate genuinely lacks, do not mention it in the resume
-- Use real contact info only from master-resume.pdf
+- Use real contact info only from resume.pdf
 ```
 
 3. Wait for the subagent to finish. Verify the file was created.
@@ -101,9 +106,9 @@ Rules:
 
 ```
 Read the job analysis at tailored-resumes/<company>-<role>/analysis.md.
-Read the base resume at master-resume.pdf.
+Read the base resume at resume.pdf.
 
-Write a tailored cover letter saved to tailored-resumes/<company>-<role>/Eky_Pratama_CoverLetter.md.
+Write a tailored cover letter saved to tailored-resumes/<company>-<role>/CoverLetter.md.
 
 Rules:
 - 3-4 paragraphs: opening hook, 2 body paragraphs mapping top candidate matches to the role's stated needs, closing with call to action
@@ -112,7 +117,7 @@ Rules:
 - Address any obvious gap as a growth area, not an invention
 - 1 page equivalent in markdown
 - NEVER fabricate experience or credentials
-- All achievements must be traceable to master-resume.pdf
+- All achievements must be traceable to resume.pdf
 ```
 
 3. Wait for the subagent to finish. Verify the file was created.
@@ -126,9 +131,9 @@ Rules:
 ```
 Read:
 - tailored-resumes/<company>-<role>/analysis.md (job requirements)
-- tailored-resumes/<company>-<role>/Eky_Pratama_Resume.md (tailored resume)
-- tailored-resumes/<company>-<role>/Eky_Pratama_CoverLetter.md (tailored cover letter)
-- master-resume.pdf (base resume — ground truth)
+- tailored-resumes/<company>-<role>/Resume.md (tailored resume)
+- tailored-resumes/<company>-<role>/CoverLetter.md (tailored cover letter)
+- resume.pdf (base resume — ground truth)
 
 Audit both documents and save your report to tailored-resumes/<company>-<role>/audit-round-<N>.md
 (where N is the round number, starting at 1).
@@ -141,7 +146,7 @@ Score each criteria from 0-100 and return an overall score (average of all):
 2. ATS Parsability: Standard section headings, no images/tables/icons, plain text.
    Deduct for any non-standard formatting, missing section labels, or complex structures.
 
-3. No Fabrication: Cross-reference every claim in the resume and cover letter against master-resume.pdf.
+3. No Fabrication: Cross-reference every claim in the resume and cover letter against resume.pdf.
    Deduct heavily for any claim not in the base resume. Flag exact fabricated lines.
 
 4. Length: Resume ≤2 pages, cover letter ≤1 page (markdown equivalent, ~80 lines per page).
@@ -168,7 +173,7 @@ Output format:
 - Fixes: [list]
 
 ### 3. No Fabrication: X/100
-- Flagged claims: [list exact lines that aren't in master-resume.pdf]
+- Flagged claims: [list exact lines that aren't in resume.pdf]
 - Verdict: [pass if none, fail with details otherwise]
 
 ### 4. Length: X/100
@@ -198,8 +203,8 @@ For rounds 2 and 3 (max 3 total rounds):
 
 ```
 Read the latest audit at tailored-resumes/<company>-<role>/audit-round-<N-1>.md.
-Read the current resume at tailored-resumes/<company>-<role>/Eky_Pratama_Resume.md.
-Read the current cover letter at tailored-resumes/<company>-<role>/Eky_Pratama_CoverLetter.md.
+Read the current resume at tailored-resumes/<company>-<role>/Resume.md.
+Read the current cover letter at tailored-resumes/<company>-<role>/CoverLetter.md.
 
 Address every flagged issue from the audit. Apply all suggested fixes unless
 they would introduce fabrication. Save updated versions of both files.
@@ -213,31 +218,42 @@ If the auditor flagged fabricated claims, REMOVE them — do not try to justify.
 7. If overall score ≥ 90, break out of the loop.
 8. If this is round 3, stop and take the best score.
 
-### Step 6 — Present Results
+### Step 6 — Convert & Present Results
 
-1. Print a summary:
+1. Read the configured `output_format` from the skill's config (default: `md`).
+
+2. Convert both files based on the format:
+
+   - **md**: no conversion needed. Present the `.md` files as final output.
+   - **docx**: run `pandoc Resume.md -o Resume.docx` and
+     `pandoc CoverLetter.md -o CoverLetter.docx`
+   - **pdf**: run `pandoc Resume.md --pdf-engine=wkhtmltopdf -o Resume.pdf` and
+     `pandoc CoverLetter.md --pdf-engine=wkhtmltopdf -o CoverLetter.pdf`
+
+   If pandoc is not installed, report the error, keep the `.md` output,
+   and tell the user how to install it.
+
+3. Print a summary:
 
 ```
 Resume and cover letter ready for <Company Name> — <Role Title>.
 
 Files:
-  tailored-resumes/<company>-<role>/Eky_Pratama_Resume.md
-  tailored-resumes/<company>-<role>/Eky_Pratama_CoverLetter.md
+  tailored-resumes/<company>-<role>/Resume.<ext>
+  tailored-resumes/<company>-<role>/CoverLetter.<ext>
 
 Final Audit Score: X/100 (Round N)
 
 Key changes from base resume:
 - [2-3 bullet points summarizing what was emphasized/reordered]
-
-To convert to PDF, reply: "convert to PDF"
 ```
 
 ## Pitfalls
 
-- If MoA presets are not configured, stop early and tell the user: "MoA presets are missing. Add `resume-analyzer`, `resume-writer`, and `resume-auditor` to `~/.hermes/config.yaml`. See IDEA.md for the snippet."
-- If `master-resume.pdf` is not found in the project root, stop and ask the user to place it there.
+- If MoA presets are not configured, stop early and tell the user: "MoA presets are missing. Run `python3 scripts/setup.py` to configure them."
+- If `resume.pdf` is not found in the project root, stop and ask the user to place it there.
 - Subagents timeout after 50 iterations by default. Complex audits may need more. If a subagent times out, re-spawn it with a narrower scope.
-- Fabrication is the hardest failure mode. Auditor must cross-reference every major claim against `master-resume.pdf`. If uncertain, flag it.
+- Fabrication is the hardest failure mode. Auditor must cross-reference every major claim against `resume.pdf`. If uncertain, flag it.
 - The `<company>-<role>` slug is derived from the analysis. If the Analyzer fails to extract these, use a fallback like `job-<timestamp>`.
 
 ## Verification
@@ -247,5 +263,5 @@ To test the pipeline:
 1. Run `/apply-job <url>` with a known job listing
 2. Verify all files are created in `tailored-resumes/`
 3. Check the audit score
-4. Review the tailored resume for accuracy (cross-reference against master-resume.pdf)
+4. Review the tailored resume for accuracy (cross-reference against resume.pdf)
 5. Run `/apply-job` with a different role/company to verify consistent behavior
