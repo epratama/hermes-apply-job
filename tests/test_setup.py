@@ -218,6 +218,34 @@ def test_merge_existing_moa_refuses():
         shutil.rmtree(tmp, ignore_errors=True)
 
 
+def test_ask_auto_yes():
+    """ask() returns True when --yes flag overrides prompts."""
+    with patch.object(setup, "_AUTO_YES", True):
+        result = setup.ask("Test prompt?")
+    assert result is True
+
+
+def test_main_yes_flag():
+    """--yes flag sets _AUTO_YES to True in main()."""
+    with patch("sys.argv", ["setup.py", "--resume", "/tmp/fake.pdf", "--yes"]):
+        try:
+            setup.main()
+        except SystemExit:
+            pass
+    assert setup._AUTO_YES is True
+
+
+def test_main_no_yes_flag():
+    """Without --yes flag, _AUTO_YES remains False in main()."""
+    setup._AUTO_YES = False  # reset in case prior test leaked
+    with patch("sys.argv", ["setup.py", "--resume", "/tmp/fake.pdf"]):
+        try:
+            setup.main()
+        except SystemExit:
+            pass
+    assert setup._AUTO_YES is False
+
+
 if __name__ == "__main__":
     import traceback
     passed = 0
