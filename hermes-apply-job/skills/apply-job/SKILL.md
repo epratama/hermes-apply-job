@@ -92,8 +92,10 @@ Rules:
 - Use the JD's language style (enterprise, startup, academic)
 - NEVER fabricate experience, degrees, certifications, or dates
 - All achievements must be traceable to resume.pdf
+- Avoid AI writing patterns: no filler phrases, no adverbs, no passive voice, no em dashes, no vague declaratives
 - If the JD asks for something the candidate genuinely lacks, do not mention it in the resume
 - Use real contact info only from resume.pdf
+- Avoid AI writing patterns: no filler phrases, no adverbs, no passive voice, no em dashes, no vague declaratives
 ```
 
 3. Wait for the subagent to finish. Verify the file was created.
@@ -118,6 +120,7 @@ Rules:
 - 1 page equivalent in markdown
 - NEVER fabricate experience or credentials
 - All achievements must be traceable to resume.pdf
+- Avoid AI writing patterns: no filler phrases, no adverbs, no passive voice, no em dashes, no vague declaratives
 ```
 
 3. Wait for the subagent to finish. Verify the file was created.
@@ -158,6 +161,17 @@ Score each criteria from 0-100 and return an overall score (average of all):
 6. Personalization: Cover letter references specific JD details, not generic phrases.
    Deduct for templated language, missing company/role name, generic closings.
 
+7. No AI Slop (stop-slop): Score on five dimensions (1-10 each):
+   - Directness: Statements or announcements?
+   - Rhythm: Varied or metronomic sentence lengths?
+   - Trust: Respects reader intelligence?
+   - Authenticity: Sounds human?
+   - Density: Anything cuttable?
+   Convert: (total/50)*100. Target: ≥70 (35/50).
+   Deduct for: filler phrases, passive voice, adverbs, formulaic structures,
+   meta-commentary, business jargon, Wh- sentence starters, em dashes, vague
+   declaratives, binary contrasts, dramatic fragmentation.
+
 Output format:
 
 ## Audit Report — Round N
@@ -187,6 +201,15 @@ Output format:
 ### 6. Personalization: X/100
 - Issues: [generic phrases found]
 - Fixes: [specific JD details to reference instead]
+
+### 7. No AI Slop: X/100
+- Directness: [score/10]
+- Rhythm: [score/10]
+- Trust: [score/10]
+- Authenticity: [score/10]
+- Density: [score/10]
+- Issues: [flagged AI patterns with line references]
+- Fixes: [rewrite suggestions to sound more human]
 ```
 
 3. Wait for the subagent to finish.
@@ -210,6 +233,7 @@ Address every flagged issue from the audit. Apply all suggested fixes unless
 they would introduce fabrication. Save updated versions of both files.
 
 If the auditor flagged fabricated claims, REMOVE them — do not try to justify.
+Also fix any AI writing patterns flagged by the auditor (filler phrases, adverbs, passive voice, em dashes).
 ```
 
 4. Wait for the subagent to finish.

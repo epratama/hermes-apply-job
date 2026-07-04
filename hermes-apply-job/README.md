@@ -40,7 +40,7 @@ The setup script checks all prerequisites and asks before installing anything.
    are enabled
 2. Optional: installs pandoc and wkhtmltopdf if you picked docx/pdf output
 3. Copies your resume to the project as `resume.pdf`
-4. Installs the `apply-job` skill to `~/.hermes/skills/career/apply-job/`
+4. Installs the `apply-job` and `stop-slop` skills to `~/.hermes/skills/`
 5. Checks your MoA presets, shows what's missing, asks to merge defaults
 6. Validates everything with Hermes
 
@@ -165,6 +165,12 @@ hermes-apply-job/
   skills/
     apply-job/
       SKILL.md                ← The skill source
+    stop-slop/
+      SKILL.md                ← AI slop detection
+      references/
+        phrases.md
+        structures.md
+        examples.md
   tailored-resumes/           ← Output directory
     <company>-<role>/
       analysis.md
@@ -225,3 +231,8 @@ again.
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+## Credits
+
+- [Hermes Agent](https://github.com/NousResearch/hermes-agent) by [Nous Research](https://nousresearch.com) — MIT License
+- [stop-slop](https://github.com/hardikpandya/stop-slop) by [Hardik Pandya](https://hvpandya.com) — MIT License

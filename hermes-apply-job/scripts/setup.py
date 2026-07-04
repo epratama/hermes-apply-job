@@ -152,24 +152,31 @@ def copy_resume(resume_path):
     ok(f"Copied {src.name} to resume.pdf")
 
 
-def install_skill():
-    """Install the apply-job skill to Hermes."""
-    header("Skill")
-    src = Path(__file__).parent.parent / "skills" / "apply-job"
-    dst = Path.home() / ".hermes" / "skills" / "career" / "apply-job"
+def install_skills():
+    """Install apply-job and stop-slop skills to Hermes."""
+    header("Skills")
+    src_dir = Path(__file__).parent.parent / "skills"
+    skills_config = [
+        {"name": "apply-job", "category": "career"},
+        {"name": "stop-slop", "category": "writing"},
+    ]
+    for skill in skills_config:
+        name, cat = skill["name"], skill["category"]
+        src = src_dir / name
+        dst = Path.home() / ".hermes" / "skills" / cat / name
+        if not src.exists():
+            err(f"{name} skill not found at {src}")
+            continue
+        if dst.exists():
+            shutil.rmtree(dst)
+        shutil.copytree(src, dst)
+        ok(f"Installed {name} to ~/.hermes/skills/{cat}/{name}/")
 
-    if dst.exists():
-        shutil.rmtree(dst)
-
-    shutil.copytree(src, dst)
-    ok(f"Installed to ~/.hermes/skills/career/apply-job/")
-
-    # Verify registration
-    rc, out = run("hermes skills list 2>/dev/null | grep apply-job")
+    rc, out = run("hermes skills list 2>/dev/null | grep -E 'apply-job|stop-slop'")
     if rc == 0:
-        ok("Skill registered with Hermes")
+        ok("Skills registered with Hermes")
     else:
-        warn("Skill installed but not detected. Restart Hermes if it was running.")
+        warn("Skills installed but not detected. Restart Hermes if it was running.")
 
 
 def load_config():
@@ -338,7 +345,7 @@ def main():
     check_toolsets()
     check_pandoc_needed(args.format)
     copy_resume(args.resume)
-    install_skill()
+    install_skills()
     setup_moa()
     set_output_format(args.format)
     print_summary(args.format)

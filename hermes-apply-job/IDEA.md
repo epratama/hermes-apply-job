@@ -133,6 +133,9 @@ documents on:
 - **Tone** — professional, active voice, results-oriented
 - **Personalization** — cover letter references specific JD details,
   not generic phrases
+- **No AI slop** — scored on Directness, Rhythm, Trust, Authenticity,
+  Density (1-10 per dimension, target ≥35/50). Flags filler phrases,
+  adverbs, passive voice, em dashes, and formulaic structures
 
 Saves the audit to `tailored-resumes/<company>-<role>/audit-round-<N>.md`.
 Returns numeric score and line-item fixes.
