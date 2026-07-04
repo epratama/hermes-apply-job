@@ -57,6 +57,17 @@ def check_hermes():
     ok("Hermes Agent detected")
 
 
+def _enable_toolset(toolset):
+    """Prompt to enable a disabled toolset."""
+    if ask(f"Enable {toolset} toolset?"):
+        rc, _ = run(f"hermes tools enable {toolset} 2>/dev/null")
+        if rc == 0:
+            ok(f"{toolset} enabled")
+            return
+        warn(f"Could not enable {toolset}. Run 'hermes tools enable {toolset}' manually.")
+    warn(f"{toolset} must be enabled for the pipeline. Enable it manually.")
+
+
 def check_toolsets():
     """Verify required toolsets are enabled."""
     rc, out = run("hermes tools list 2>/dev/null | grep -E 'terminal|delegation|web' | grep enabled")
@@ -73,53 +84,58 @@ def check_toolsets():
             enabled.add("web")
 
     for t in ["terminal", "delegation", "web"]:
-        if t not in enabled:
-            err(f"{t} toolset not enabled")
-            if ask(f"Enable {t} toolset?"):
-                rc, _ = run(f"hermes tools enable {t} 2>/dev/null")
-                if rc == 0:
-                    ok(f"{t} enabled")
-                else:
-                    warn(f"Could not enable {t}. Run 'hermes tools enable {t}' manually.")
-            else:
-                warn(f"{t} must be enabled for the pipeline. Enable it manually.")
-        else:
+        if t in enabled:
             ok(f"{t} toolset enabled")
+        else:
+            err(f"{t} toolset not enabled")
+            _enable_toolset(t)
 
 
-def check_pandoc_needed(output_format):
-    """Check pandoc is available if docx/pdf output."""
-    if output_format == "md":
-        return True
+def _check_pandoc_installed():
+    """Return True if pandoc is available, prompt install if not."""
     rc, _ = run("which pandoc")
     if rc == 0:
         ok("pandoc installed")
-        if output_format == "pdf":
-            rc, _ = run("which wkhtmltopdf")
-            if rc == 0:
-                ok("wkhtmltopdf installed")
-            else:
-                err("wkhtmltopdf not found (needed for PDF output)")
-                if ask("Install wkhtmltopdf?"):
-                    install_cmd = "brew install wkhtmltopdf 2>/dev/null || apt install -y wkhtmltopdf 2>/dev/null || choco install wkhtmltopdf 2>/dev/null"
-                    rc, _ = run(install_cmd)
-                    if rc == 0:
-                        ok("wkhtmltopdf installed")
-                    else:
-                        warn("Install manually: brew install wkhtmltopdf")
-                        return True
         return True
-    else:
-        err(f"pandoc not found (needed for {output_format} output)")
-        if ask("Install pandoc?"):
-            install_cmd = "brew install pandoc 2>/dev/null || apt install -y pandoc 2>/dev/null || choco install pandoc 2>/dev/null"
-            rc, _ = run(install_cmd)
-            if rc == 0:
-                ok("pandoc installed")
-                return True
-        warn(f"Install manually: brew install pandoc (or your system's package manager)")
-        ok(f"Output will stay as markdown. Use --format md to avoid this warning.")
+    err("pandoc not found")
+    if ask("Install pandoc?"):
+        install_cmd = "brew install pandoc 2>/dev/null || apt install -y pandoc 2>/dev/null || choco install pandoc 2>/dev/null"
+        rc, _ = run(install_cmd)
+        if rc == 0:
+            ok("pandoc installed")
+            return True
+    warn("Install manually: brew install pandoc (or your system's package manager)")
+    return False
+
+
+def _check_wkhtmltopdf_installed():
+    """Return True if wkhtmltopdf is available, prompt install if not.
+    Returns True even if not available (non-blocking for PDF setup)."""
+    rc, _ = run("which wkhtmltopdf")
+    if rc == 0:
+        ok("wkhtmltopdf installed")
+        return True
+    err("wkhtmltopdf not found (needed for PDF output)")
+    if ask("Install wkhtmltopdf?"):
+        install_cmd = "brew install wkhtmltopdf 2>/dev/null || apt install -y wkhtmltopdf 2>/dev/null || choco install wkhtmltopdf 2>/dev/null"
+        rc, _ = run(install_cmd)
+        if rc == 0:
+            ok("wkhtmltopdf installed")
+            return True
+    warn("Install manually: brew install wkhtmltopdf")
+    return True  # let setup continue even without wkhtmltopdf
+
+
+def check_pandoc_needed(output_format):
+    """Check pandoc and wkhtmltopdf availability for docx/pdf output."""
+    if output_format == "md":
+        return True
+    if not _check_pandoc_installed():
+        ok("Output will stay as markdown. Use --format md to avoid this warning.")
         return False
+    if output_format == "pdf":
+        _check_wkhtmltopdf_installed()
+    return True
 
 
 def copy_resume(resume_path):
@@ -178,8 +194,10 @@ def load_moa_defaults():
 def merge_moa_config(config_content, moa_content):
     """
     Merge MoA presets into config content.
-    If config has no moa section, append the moa content.
-    If config has existing moa section, append only the new presets under it.
+    If config has no moa section, append the moa content directly.
+    If config already has a moa section, show the presets for manual merge
+    (safe — avoids YAML nesting errors from string-based insertion).
+    Returns True if file was modified, False if only instructions were printed.
     """
     config_path = Path.home() / ".hermes" / "config.yaml"
 
@@ -188,32 +206,71 @@ def merge_moa_config(config_content, moa_content):
             merged = config_content.rstrip() + "\n\n" + moa_content
         else:
             merged = moa_content
-    else:
-        # Moa section exists — extract only the presets block from moa_content
-        # and indent it under the existing moa: key to avoid duplicate keys
-        moa_lines = moa_content.strip().split("\n")
-        preset_lines = []
-        found_presets = False
-        for line in moa_lines:
-            if line.startswith("  presets:"):
-                found_presets = True
-                preset_lines.append(line.strip())
-            elif found_presets:
-                preset_lines.append(line.rstrip())
-        if preset_lines:
-            moa_block = "\n".join(preset_lines)
-            merged = config_content.rstrip() + "\n\n# Added by hermes-apply-job setup\n" + moa_block
-        else:
-            merged = config_content
 
-    # Backup original
-    backup_path = config_path.with_suffix(".yaml.bak")
-    if config_content.strip():
-        with open(backup_path, "w") as f:
-            f.write(config_content)
+        if config_content.strip():
+            backup_path = config_path.with_suffix(".yaml.bak")
+            with open(backup_path, "w") as f:
+                f.write(config_content)
 
-    with open(config_path, "w") as f:
-        f.write(merged)
+        with open(config_path, "w") as f:
+            f.write(merged)
+        return True
+
+    # moa: section exists — show presets for manual merge
+    warn("MoA section already exists in config. Add these presets manually.")
+    print()
+    moa_lines = moa_content.strip().split("\n")
+    in_presets = False
+    for line in moa_lines:
+        if line.startswith("  presets:"):
+            in_presets = True
+            print("  Under moa.presets: in ~/.hermes/config.yaml, add:")
+            continue
+        if in_presets and line.strip():
+            print(f"  {line}")
+    print()
+    print("  Then run: hermes moa list")
+    print()
+    return False
+
+
+def _detect_moa_presets():
+    """Return set of preset names already configured in Hermes."""
+    rc, out = run("hermes moa list 2>/dev/null")
+    if rc != 0 or not out:
+        return set()
+    existing = set()
+    for line in out.split("\n"):
+        for preset in ["resume-analyzer", "resume-writer", "resume-auditor"]:
+            if preset in line:
+                existing.add(preset)
+    return existing
+
+
+def _print_missing_presets(missing, existing):
+    """Print what presets are missing and what's already configured."""
+    print(f"  Required presets: resume-analyzer, resume-writer, resume-auditor")
+    print(f"  Missing: {', '.join(sorted(missing))}")
+    if existing:
+        print(f"  Already configured: {', '.join(sorted(existing))}")
+    print()
+    print("  Default presets from config/moa-presets.yaml:")
+    print("    • resume-analyzer  — Fast extraction (deepseek-v4-flash + v4-pro)")
+    print("    • resume-writer    — Creative writing (MiniMax-M3 + Nemotron 3 Ultra + v4-pro)")
+    print("    • resume-auditor   — Detail scoring (MiniMax-M3 + Nemotron 3 Ultra + v4-pro)")
+    print()
+
+
+def _validate_moa():
+    """Run hermes moa list and print results. Return True if successful."""
+    rc, out = run("hermes moa list 2>/dev/null")
+    if rc == 0 and out:
+        ok("hermes moa list succeeded")
+        for line in out.split("\n"):
+            print(f"    {line.strip()}")
+        return True
+    warn("Could not validate with hermes moa list")
+    return False
 
 
 def setup_moa():
@@ -224,50 +281,25 @@ def setup_moa():
     if moa_content is None:
         return
 
-    config_content = load_config()
-
-    # Check what presets already exist
-    rc, out = run("hermes moa list 2>/dev/null")
-    existing = set()
-    if rc == 0 and out:
-        for line in out.split("\n"):
-            for preset in ["resume-analyzer", "resume-writer", "resume-auditor"]:
-                if preset in line:
-                    existing.add(preset)
-
+    existing = _detect_moa_presets()
     needed = {"resume-analyzer", "resume-writer", "resume-auditor"}
     missing = needed - existing
 
     if not missing:
         ok("All MoA presets already configured")
-    else:
-        print(f"  Required presets: resume-analyzer, resume-writer, resume-auditor")
-        print(f"  Missing: {', '.join(sorted(missing))}")
-        if existing:
-            print(f"  Already configured: {', '.join(sorted(existing))}")
-        print()
-        print("  Default presets from config/moa-presets.yaml:")
-        print("    • resume-analyzer  — Fast extraction (deepseek-v4-flash + v4-pro)")
-        print("    • resume-writer    — Creative writing (MiniMax-M3 + Nemotron 3 Ultra + v4-pro)")
-        print("    • resume-auditor   — Detail scoring (MiniMax-M3 + Nemotron 3 Ultra + v4-pro)")
-        print()
+        return
 
-        if ask("Merge defaults into ~/.hermes/config.yaml?"):
-            merge_moa_config(config_content, moa_content)
+    _print_missing_presets(missing, existing)
+
+    if ask("Merge defaults into ~/.hermes/config.yaml?"):
+        did_merge = merge_moa_config(load_config(), moa_content)
+        if did_merge:
             ok("MoA presets merged")
-
-            # Validate with Hermes
             header("Validation")
-            rc, out = run("hermes moa list 2>/dev/null")
-            if rc == 0 and out:
-                ok("hermes moa list succeeded")
-                for line in out.split("\n"):
-                    print(f"    {line.strip()}")
-            else:
-                warn("Could not validate with hermes moa list")
-        else:
-            warn("Skipped MoA config. Run setup again or edit config manually.")
-            print("  Edit config/moa-presets.yaml and re-run: python3 scripts/setup.py")
+            _validate_moa()
+    else:
+        warn("Skipped MoA config. Run setup again or edit config manually.")
+        print("  Edit config/moa-presets.yaml and re-run: python3 scripts/setup.py")
 
 
 def set_output_format(output_format):
