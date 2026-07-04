@@ -149,12 +149,14 @@ flagged issues, the Auditor re-scores. Loop stops when:
 
 Hermes presents the final output with a summary of what changed and why.
 
-### Step 6 — Convert & Present Results
+### Step 6 — Template Selection & PDF Generation
 
-Hermes reads the configured `output_format` from the skill config and converts:
+Hermes reads the configured `output_format` from the skill config:
 - **md**: no conversion — `.md` files are the final output
 - **docx**: pandoc converts `.md` to `.docx`
-- **pdf**: pandoc + wkhtmltopdf converts `.md` to `.pdf`
+- **pdf**: Typst compiles 3 styled templates (classic, modern, minimal) from
+  `templates/resume/`. User picks one via browser preview links. Falls back to
+  pandoc + wkhtmltopdf if Typst is not installed.
 
 If conversion tools are missing, Hermes reports the error and keeps the
 `.md` output.

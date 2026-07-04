@@ -16,6 +16,7 @@ using a multi-agent MoA consortium orchestrated by Hermes.
 - `IDEA.md` — full project spec with MoA presets and pipeline details
 - `scripts/setup.py` — one-command setup (skill install + MoA config + resume copy)
 - `config/moa-presets.yaml` — MoA model configuration
+- `templates/resume/` — Typst resume templates (classic, modern, minimal)
 - `tailored-resumes/` — output directory, one subfolder per application
 - `tests/test_setup.py` — setup script self-check tests
 
@@ -41,6 +42,8 @@ tailored-resumes/<company>-<role>/
   analysis.md           # Job Analyzer output
   Resume.md             # Final tailored resume
   CoverLetter.md        # Final tailored cover letter
+  Resume.pdf            # Final PDF (selected template)
+  CoverLetter.pdf       # Final PDF (selected template)
   audit-round-1.md      # Auditor reports per round (up to 3)
   audit-round-2.md
   audit-round-3.md

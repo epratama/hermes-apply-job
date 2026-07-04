@@ -241,34 +241,71 @@ Also fix any AI writing patterns flagged by the auditor (filler phrases, adverbs
 7. If overall score ≥ 90, break out of the loop.
 8. If this is round 3, stop and take the best score.
 
-### Step 6 — Convert & Present Results
+### Step 6 — Template Selection & PDF Generation
 
 1. Read the configured `output_format` from the skill's config (default: `md`).
 
-2. Convert both files based on the format:
+2. Convert based on the format:
 
-   - **md**: no conversion needed. Present the `.md` files as final output.
-   - **docx**: run `pandoc tailored-resumes/<company>-<role>/Resume.md -o tailored-resumes/<company>-<role>/Resume.docx` and
-     `pandoc tailored-resumes/<company>-<role>/CoverLetter.md -o tailored-resumes/<company>-<role>/CoverLetter.docx`
-   - **pdf**: run `pandoc tailored-resumes/<company>-<role>/Resume.md --pdf-engine=wkhtmltopdf -o tailored-resumes/<company>-<role>/Resume.pdf` and
-     `pandoc tailored-resumes/<company>-<role>/CoverLetter.md --pdf-engine=wkhtmltopdf -o tailored-resumes/<company>-<role>/CoverLetter.pdf`
+   - **md**: no conversion. Present `.md` files as final output.
+   - **docx**: `pandoc Resume.md -o Resume.docx` and same for CoverLetter. Done.
+   - **pdf**: Generate with Typst templates (see sub-steps below).
+       If `typst` is not installed, fall back to pandoc + wkhtmltopdf
+       (single basic PDF, no template selection). Print install hint.
 
-   If pandoc is not installed, report the error, keep the `.md` output,
-   and tell the user how to install it.
+3. **PDF — Template generation** (when format is pdf and typst is available):
 
-3. Print a summary:
+   a. Extract candidate name and contact from `analysis.md` (lines 1-2).
+
+   b. Convert markdown to raw Typst:
+      `pandoc tailored-resumes/<company>-<role>/Resume.md -t typst -o /tmp/resume-body.typ`
+      `pandoc tailored-resumes/<company>-<role>/CoverLetter.md -t typst -o /tmp/cover-body.typ`
+
+   c. For each template in {classic, modern, minimal}:
+      - Read `templates/resume/<name>.typ` and `templates/coverletter/<name>.typ`
+      - Replace `{{NAME}}` and `{{CONTACT}}` with extracted values
+      - Replace `{{CONTENT}}` with the raw typst body
+      - `typst compile` → `tailored-resumes/<company>-<role>/<name>-resume.pdf`
+      - Same for cover letter → `<name>-coverletter.pdf`
+
+   d. Print selection prompt:
 
 ```
-Resume and cover letter ready for <Company Name> — <Role Title>.
+═══ Template Selection ═══
 
-Files:
-  tailored-resumes/<company>-<role>/Resume.<ext>
-  tailored-resumes/<company>-<role>/CoverLetter.<ext>
+Pick a resume style. Open a link to preview:
 
+1. classic  — Serif, traditional, horizontal rules
+   Ref: https://typst.app/universe/package/moderner-cv
+
+2. modern   — Sans-serif (Inter), blue accent, sidebar
+   Ref: https://typst.app/universe/package/brilliant-cv
+
+3. minimal  — Monochrome, hairline rules, ATS-friendly
+   Ref: https://typst.app/universe/package/simple-technical-resume
+
+PDFs ready at tailored-resumes/<company>-<role>/:
+  classic-resume.pdf   classic-coverletter.pdf
+  modern-resume.pdf    modern-coverletter.pdf
+  minimal-resume.pdf   minimal-coverletter.pdf
+
+Reply with the template name or number (1/2/3).
+```
+
+   e. Wait for user response. Match to template name.
+
+   f. On selection:
+      - Rename `<chosen>-resume.pdf` → `Resume.pdf`
+      - Rename `<chosen>-coverletter.pdf` → `CoverLetter.pdf`
+      - Delete the other 4 PDFs
+
+4. Print final summary:
+
+```
+<Company Name> — <Role Title>
+Template: <chosen>
 Final Audit Score: X/100 (Round N)
-
-Key changes from base resume:
-- [2-3 bullet points summarizing what was emphasized/reordered]
+Files: tailored-resumes/<company>-<role>/Resume.pdf, CoverLetter.pdf
 ```
 
 ## Pitfalls

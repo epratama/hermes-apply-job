@@ -25,6 +25,7 @@ DEVNULL = "NUL" if IS_WINDOWS else "/dev/null"
 HERMES_URL = "https://hermes-agent.nousresearch.com/"
 PANDOC_URL = "https://pandoc.org/installing.html"
 WKHTML_URL = "https://wkhtmltopdf.org/downloads.html"
+TYPST_URL = "https://github.com/typst/typst"
 
 IS_TTY = sys.stdout.isatty()
 C_RESET  = "\033[0m"  if IS_TTY else ""
@@ -171,7 +172,14 @@ def check_pandoc_needed(output_format):
         ok("Output will stay as markdown. Use --format md to avoid this warning.")
         return False
     if output_format == "pdf":
-        _check_tool("wkhtmltopdf", "wkhtmltopdf", WKHTML_URL, output_format)
+        # typst preferred (modern, fast, beautiful PDFs)
+        if _check_tool("typst", "typst", TYPST_URL, output_format):
+            ok("typst available — 3 resume templates for PDF output")
+        else:
+            # fallback: wkhtmltopdf (basic PDF, no template selection)
+            _check_tool("wkhtmltopdf", "wkhtmltopdf", WKHTML_URL, output_format)
+            warn("typst not installed — basic PDF only (no template selection)")
+            warn("Install typst: brew install typst")
     return True
 
 

@@ -99,16 +99,17 @@ def test_check_pandoc_needed_missing_pandoc():
 
 
 def test_check_pandoc_needed_pdf_calls_wkhtml():
-    """PDF format checks both pandoc and wkhtmltopdf."""
+    """PDF format checks pandoc + typst. wkhtmltopdf only if typst missing."""
     calls = []
     def fake_check(name, hint, url, fmt):
         calls.append(name)
-        return True
+        return name != "typst"  # typst missing → triggers wkhtml fallback
     with patch.object(setup, "_check_tool", fake_check):
         result = setup.check_pandoc_needed("pdf")
     assert result is True
     assert "pandoc" in calls
-    assert "wkhtmltopdf" in calls
+    assert "typst" in calls
+    assert "wkhtmltopdf" in calls  # fallback triggered
 
 
 def test_copy_resume_missing():
@@ -244,6 +245,63 @@ def test_main_no_yes_flag():
         except SystemExit:
             pass
     assert setup._AUTO_YES is False
+
+
+def test_check_tool_typst_not_found():
+    """_check_tool returns False for missing typst, prints install hint."""
+    with patch("shutil.which", return_value=None), \
+         patch.object(setup, "IS_MACOS", True):
+        result = setup._check_tool("typst", "typst", "https://url", "pdf")
+    assert result is False
+
+
+def test_check_pandoc_pdf_typst_available():
+    """check_pandoc_needed('pdf') checks typst and returns True."""
+    calls = []
+    def fake_check(name, hint, url, fmt):
+        calls.append(name)
+        return True
+    with patch.object(setup, "_check_tool", fake_check):
+        result = setup.check_pandoc_needed("pdf")
+    assert result is True
+    assert "pandoc" in calls
+    assert "typst" in calls
+
+
+def test_check_pandoc_pdf_typst_missing():
+    """check_pandoc_needed('pdf') falls back to wkhtmltopdf when typst missing."""
+    calls = []
+    def fake_check(name, hint, url, fmt):
+        calls.append(name)
+        return name != "typst"  # typst missing, others found
+    with patch.object(setup, "_check_tool", fake_check):
+        result = setup.check_pandoc_needed("pdf")
+    assert result is True
+    assert "typst" in calls
+    assert "wkhtmltopdf" in calls
+
+
+def test_check_pandoc_pdf_typst_and_wkhtml_both_available():
+    """When typst is available, wkhtmltopdf is not checked (short-circuit)."""
+    calls = []
+    def fake_check(name, hint, url, fmt):
+        calls.append(name)
+        return True  # both available
+    with patch.object(setup, "_check_tool", fake_check):
+        setup.check_pandoc_needed("pdf")
+    assert "pandoc" in calls
+    assert "typst" in calls
+    # wkhtmltopdf skipped — typst found first, no fallback needed
+    assert "wkhtmltopdf" not in calls
+
+
+def test_check_pandoc_needed_warns_on_typst_fallback():
+    """check_pandoc_needed returns True when only wkhtmltopdf is available."""
+    def fake_check(name, hint, url, fmt):
+        return name in ("pandoc", "wkhtmltopdf")  # typst absent
+    with patch.object(setup, "_check_tool", fake_check):
+        result = setup.check_pandoc_needed("pdf")
+    assert result is True  # pipeline continues despite missing typst
 
 
 if __name__ == "__main__":

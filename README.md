@@ -33,7 +33,7 @@ python3 scripts/setup.py --resume ~/your-resume.pdf
 ```
 
 Start with markdown (the default). Add `--format pdf` once you have
-pandoc + wkhtmltopdf installed.
+pandoc + typst installed.
 
 For an AI agent to run setup unattended, add `--yes`:
 
@@ -91,7 +91,7 @@ and asks you to place it there.
 
 1. Checks Hermes is installed and toolsets (terminal, delegation, web)
    are enabled
-2. Checks pandoc and wkhtmltopdf availability and prints OS-specific install
+2. Checks pandoc, typst, and wkhtmltopdf availability and prints OS-specific
    instructions if you picked docx/pdf output
 3. Copies your resume to the project as `resume.pdf`
 4. Installs the `apply-job` and `stop-slop` skills to `~/.hermes/skills/`
@@ -170,7 +170,7 @@ for all configuration options (temperature, max tokens, multi-provider mixing).
 |------|--------|-------------|
 | `--format md` (default) | `Resume.md`, `CoverLetter.md` | None |
 | `--format docx` | `Resume.docx`, `CoverLetter.docx` | pandoc |
-| `--format pdf` | `Resume.pdf`, `CoverLetter.pdf` | pandoc + wkhtmltopdf |
+| `--format pdf` | `Resume.pdf`, `CoverLetter.pdf` | pandoc + typst (recommended) or wkhtmltopdf |
 
 Output lands in `tailored-resumes/<company>-<role>/` along with the job
 analysis and audit reports. Only the format you selected is produced.
@@ -198,7 +198,7 @@ analysis and audit reports. Only the format you selected is produced.
                           │
                           ▼
               ┌───────────────────────┐
-              │ Convert (md/docx/pdf) │
+              │ Templates & PDF (3 styles)│
               │ Present final output  │
               └───────────────────────┘
 ```
@@ -218,6 +218,12 @@ hermes-apply-job/
     setup.py                  ← One-command setup
   tests/
     test_setup.py             ← Setup script self-check
+  templates/
+    resume/
+      classic.typ             ← Serif, traditional
+      modern.typ              ← Sans-serif, accent
+      minimal.typ             ← Monochrome, ATS
+    coverletter/              ← Matching cover letter templates
   skills/
     apply-job/
       SKILL.md                ← The skill source
@@ -285,6 +291,10 @@ prints the presets for manual addition to avoid YAML merge issues.
 Edit `config/moa-presets.yaml` and run `python3 scripts/setup.py --resume <path>`
 again.
 
+### How do I change the resume template?
+Re-run `/apply-job <url>`. The pipeline regenerates all templates — pick a
+different one. No need to re-run setup.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
@@ -296,3 +306,4 @@ MIT — see [LICENSE](LICENSE).
 - [Superpowers](https://github.com/obra/superpowers) by [obra](https://github.com/obra) — Apache 2.0 License
 - [Ponytail](https://github.com/DietrichGebert/ponytail) by [Dietrich Gebert](https://github.com/DietrichGebert) — MIT License
 - [OpenCode](https://github.com/opencode-ai/opencode) — MIT License
+- [Typst](https://github.com/typst/typst) — Apache 2.0 License
