@@ -286,78 +286,98 @@ Also fix any AI writing patterns flagged by the auditor (filler phrases, adverbs
 
 1. Read the configured `output_format` from the skill's config (default: `md`).
 
-2. Convert based on the format:
+2. If format is **md** or **docx**:
+   - Convert the file: `pandoc ... -o ...` (docx only, md stays as-is).
+   - Print: "Template selection and styled PDF output require typst.
+     Re-run setup with --format pdf: python3 scripts/setup.py --resume <path> --format pdf
+     Install typst: brew install typst
+     Browse templates: https://typst.app/universe/search?q=resume
+     Keeping your <format> output. Run /apply-job again with --format pdf
+     when ready."
+   - Skip to step 4 (final summary).
 
-   - **md**: no conversion. Present `.md` files as final output.
-    - **docx**: `pandoc tailored-resumes/<company>-<role>/Resume.md -o tailored-resumes/<company>-<role>/Resume.docx` and same for CoverLetter. Done.
-   - **pdf**: Generate with Typst templates (see sub-steps below).
-       If `typst` is not installed, fall back to pandoc + wkhtmltopdf
-       (single basic PDF, no template selection). Print install hint.
+3. If format is **pdf** and **typst is not installed**:
+   - Fall back to pandoc + wkhtmltopdf for a single basic PDF.
+   - Print: "typst not installed — basic PDF only (no template selection).
+     Install typst: brew install typst
+     Browse templates: https://typst.app/universe/search?q=resume"
+   - Skip to step 4 (final summary).
 
-3. **PDF — Template generation** (when format is pdf and typst is available):
+4. **PDF + typst available — Template generation:**
 
-    a. Read `tailored-resumes/<company>-<role>/Resume.md`.
-       The first `# ` heading is the candidate's name. The text between
-       that heading and the first `## ` section header is the candidate's
-       contact info (email, phone, location). Use these as `{{NAME}}` and
-       `{{CONTACT}}`.
+   a. Read `tailored-resumes/<company>-<role>/Resume.md`.
+      The first `# ` heading is the candidate's name. The text between
+      that heading and the first `## ` section header is the candidate's
+      contact info (email, phone, location). Use these as `{{NAME}}` and
+      `{{CONTACT}}`.
 
-    b. Convert markdown to raw Typst:
-       `pandoc tailored-resumes/<company>-<role>/Resume.md -t typst -o /tmp/resume-body.typ`
-       `pandoc tailored-resumes/<company>-<role>/CoverLetter.md -t typst -o /tmp/cover-body.typ`
+   b. Convert markdown to raw Typst:
+      `pandoc tailored-resumes/<company>-<role>/Resume.md -t typst -o /tmp/resume-body.typ`
+      `pandoc tailored-resumes/<company>-<role>/CoverLetter.md -t typst -o /tmp/cover-body.typ`
 
-    c. For each template name: classic, modern, and minimal:
-       - Read the template: `templates/resume/<name>.typ` and
-         `templates/coverletter/<name>.typ`
-       - Use string replacement: swap `{{NAME}}` with the candidate name,
-         `{{CONTACT}}` with the contact info, `{{CONTENT}}` with the
-         Typst body. Write the result to `/tmp/<name>-resume.typ` and
-         `/tmp/<name>-cover.typ`.
-        - Compile: `typst compile /tmp/<name>-resume.typ tailored-resumes/<company>-<role>/<name>-resume.pdf`
-        - Same for cover: `typst compile /tmp/<name>-cover.typ tailored-resumes/<company>-<role>/<name>-coverletter.pdf`
+   c. For each template name: classic, modern, and minimal:
+      - Read the template: `templates/resume/<name>.typ` and
+        `templates/coverletter/<name>.typ`
+      - Use string replacement: swap `{{NAME}}` with the candidate name,
+        `{{CONTACT}}` with the contact info, `{{CONTENT}}` with the
+        Typst body. Write the result to `/tmp/<name>-resume.typ` and
+        `/tmp/<name>-cover.typ`.
+      - Compile: `typst compile /tmp/<name>-resume.typ tailored-resumes/<company>-<role>/<name>-resume.pdf`
+      - Same for cover: `typst compile /tmp/<name>-cover.typ tailored-resumes/<company>-<role>/<name>-coverletter.pdf`
 
-       If `typst compile` fails for any template:
-       - Print the error and skip that template
-       - Delete the failed PDF file if it was partially created
-       - Continue with the remaining templates
-       - If ALL three templates fail, fall back to pandoc + wkhtmltopdf
-         for a single basic PDF, keeping the markdown as backup
+      If `typst compile` fails for any template:
+      - Print the error and skip that template
+      - Delete the failed PDF file if it was partially created
+      - Continue with the remaining templates
+      - If ALL three templates fail, fall back to pandoc + wkhtmltopdf
+        for a single basic PDF, keeping the markdown as backup
 
    d. Print selection prompt:
 
 ```
 ═══ Template Selection ═══
 
-Pick a resume style. Open a link to preview:
+Browse templates or pick a built-in style:
 
-1. classic  — Serif, traditional, horizontal rules
-   Ref: https://typst.app/universe/package/moderner-cv
+📂 All resume templates: https://typst.app/universe/search?q=resume
 
-2. modern   — Sans-serif (Inter), blue accent, sidebar
-   Ref: https://typst.app/universe/package/brilliant-cv
+Built-in styles:
+  1. classic  — Serif, traditional, horizontal rules
+  2. modern   — Sans-serif (Inter), blue accent, sidebar
+  3. minimal  — Monochrome, hairline rules, ATS-friendly
 
-3. minimal  — Monochrome, hairline rules, ATS-friendly
-   Ref: https://typst.app/universe/package/simple-technical-resume
+If you found a template on Typst Universe you prefer, paste the package
+URL (e.g., "https://typst.app/universe/package/brilliant-cv").
 
-PDFs ready at tailored-resumes/<company>-<role>/:
-  classic-resume.pdf   classic-coverletter.pdf
-  modern-resume.pdf    modern-coverletter.pdf
-  minimal-resume.pdf   minimal-coverletter.pdf
+PDFs previewed at tailored-resumes/<company>-<role>/:
+  classic-resume.pdf    classic-coverletter.pdf
+  modern-resume.pdf     modern-coverletter.pdf
+  minimal-resume.pdf    minimal-coverletter.pdf
 
-Reply with the template name or number (1/2/3).
+Reply with a number (1-3), a template name, or a Typst Universe URL.
 ```
 
-   e. Wait for user response. Match to template name.
+   e. Wait for user response. Match to template:
+
+      - **Number (1/2/3) or name ("classic"/"modern"/"minimal")**:
+        Select the matching built-in template.
+
+      - **Typst Universe URL** (e.g., `https://typst.app/universe/package/<name>`):
+        Extract the package name. Check if `templates/resume/<name>.typ`
+        exists in the project — if so, use it. Otherwise, run
+        `typst init @preview/<name>` to download the template.
+        Inject content, compile, present. If compile fails:
+        "Template '<name>' failed to compile: <error>.
+        Pick a different template or use a built-in style."
 
    f. On selection:
       - Rename `<chosen>-resume.pdf` → `Resume.pdf`
       - Rename `<chosen>-coverletter.pdf` → `CoverLetter.pdf`
       - Delete the 4 PDFs for the two templates NOT chosen
-      - If format is docx or pdf: delete the intermediate Resume.md and
-        CoverLetter.md (final output is in the chosen format).
+      - Delete the intermediate Resume.md and CoverLetter.md
         Keep: analysis.md and all audit-round-*.md.
 
-4. Print final summary:
+5. Print final summary:
 
 ```
 <Company Name> — <Role Title>

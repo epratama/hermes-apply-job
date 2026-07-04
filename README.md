@@ -295,6 +295,11 @@ again.
 Re-run `/apply-job <url>`. The pipeline regenerates all templates — pick a
 different one. No need to re-run setup.
 
+### How do I use a custom Typst resume template?
+Browse https://typst.app/universe/search?q=resume. When the pipeline
+asks for template selection, paste the package URL. Hermes downloads
+and compiles the template for your content.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
