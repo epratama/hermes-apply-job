@@ -57,8 +57,9 @@ The first two lines of the file must be:
 
 Be thorough. Do not summarize — list everything.
 
-If the URL is inaccessible or the page has no parseable job description,
-report the failure to the parent and do not create any files.
+If the URL is inaccessible, report the failure to the parent and do not create any files.
+If the JD is partially parseable, extract what you can, clearly note what is missing,
+and save the partial analysis. The orchestrator will ask the user to paste the full JD.
 ```
 
 5. Wait for the subagent to finish. Verify `analysis.md` was created.
@@ -192,7 +193,8 @@ Output format:
 For rounds 2 and 3 (max 3 total rounds):
 
 1. Read the previous audit report (`audit-round-<N-1>.md`).
-2. Give the resume writer subagent this prompt (increment N for each round):
+2. Switch model to MoA preset `resume-writer`: `/model resume-writer --provider moa`
+3. Spawn the resume writer subagent with this prompt (increment N for each round):
 
 ```
 Read the latest audit at tailored-resumes/<company>-<role>/audit-round-<N-1>.md.
@@ -205,10 +207,11 @@ they would introduce fabrication. Save updated versions of both files.
 If the auditor flagged fabricated claims, REMOVE them — do not try to justify.
 ```
 
-3. Wait for the subagent to finish.
-4. Re-run the Auditor (Step 4, incrementing N).
-5. If overall score ≥ 90, break out of the loop.
-6. If this is round 3, stop and take the best score.
+4. Wait for the subagent to finish.
+5. Switch model back to default.
+6. Re-run the Auditor (Step 4, incrementing N).
+7. If overall score ≥ 90, break out of the loop.
+8. If this is round 3, stop and take the best score.
 
 ### Step 6 — Present Results
 
