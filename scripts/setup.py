@@ -96,12 +96,11 @@ def _enable_toolset(toolset):
 
 
 def check_toolsets():
-    rc, out = run(f"hermes tools list 2>{DEVNULL} | grep -E 'terminal|delegation|web' | grep enabled")
-    if rc != 0 or not out:
-        warn("Could not verify toolsets. Ensure terminal, delegation, and web are enabled.")
-        return
+    rc, out = run(f"hermes tools list 2>{DEVNULL}")
     enabled = set()
     for line in out.split("\n"):
+        if "enabled" not in line:
+            continue
         if "terminal" in line:
             enabled.add("terminal")
         if "delegation" in line:
@@ -144,8 +143,8 @@ def install_skills():
         shutil.copytree(src, dst)
         ok(f"Installed {name} to {dst}")
 
-    rc, out = run(f"hermes skills list 2>{DEVNULL} | grep -E 'apply-job|stop-slop|ui-ux-pro-max'")
-    if rc == 0:
+    rc, out = run(f"hermes skills list 2>{DEVNULL}")
+    if any(s in out for s in ("apply-job", "stop-slop", "ui-ux-pro-max")):
         ok("Skills registered with Hermes")
     else:
         warn("Skills installed but not detected. Restart Hermes if it was running.")

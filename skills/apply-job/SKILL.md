@@ -96,7 +96,7 @@ Last used: <style> (<format>)
    - Read lorem ipsum content from `skills/apply-job/lorem-resume.md`
      and `skills/apply-job/lorem-coverletter.md` (ships with the skill)
    - For each style {1-classic, 2-modern, 3-minimal, 4-keep mine}:
-     * Run `python3 skills/ui-ux-pro-max/scripts/search.py "<keywords>" --design-system`
+     * Run `python skills/ui-ux-pro-max/scripts/search.py "<keywords>" --design-system`
        to get a design system (colors, typography, spacing)
       * For style 4: extract `resume.docx` styles (see Step 7 for the full extraction command)
      * Inject the lorem ipsum content + design system CSS into `templates/resume/base.html`
@@ -124,11 +124,14 @@ Last used: <style> (<format>)
 
 ### Step 1 — Pre-Flight Checks
 
-1. Verify `resume.docx` exists in the project root. If not, stop and tell the user to place it there.
-2. Convert to text once (all subagents will use this file):
-   `pandoc resume.docx -t plain --wrap=none -o /tmp/resume-base.txt`
+1. Resolve the platform temp directory:
+   `python -c "import tempfile; print(tempfile.gettempdir())"` — save the result.
+    Use this path everywhere `<tempdir>/` is referenced below.
+2. Verify `resume.docx` exists in the project root. If not, stop and tell the user to place it there.
+3. Convert to text once (all subagents will use this file):
+   `pandoc resume.docx -t plain --wrap=none -o <tempdir>/resume-base.txt`
    If pandoc is not available, stop and tell the user: "Pandoc is required.
-   Install: brew install pandoc"
+   Install: https://pandoc.org/installing.html"
 
 ### Step 2 — Job Analyzer (max 2 retries)
 
@@ -173,7 +176,7 @@ and save the partial analysis. The orchestrator will ask the user to paste the f
 
 ```
 Read the job analysis at tailored-resumes/<company>-<role>/analysis.md.
-Read the base resume text from /tmp/resume-base.txt.
+Read the base resume text from <tempdir>/resume-base.txt.
 
 Write a tailored resume saved to tailored-resumes/<company>-<role>/Resume.md.
 
@@ -184,10 +187,10 @@ Rules:
 - Keep to 2 pages equivalent in markdown
 - Use the JD's language style (enterprise, startup, academic)
 - NEVER fabricate experience, degrees, certifications, or dates
-- All achievements must be traceable to /tmp/resume-base.txt
+- All achievements must be traceable to <tempdir>/resume-base.txt
 - Avoid AI writing patterns: no filler phrases, no adverbs, no passive voice, no em dashes, no vague declaratives
 - If the JD asks for something the candidate genuinely lacks, do not mention it in the resume
-- Use real contact info only from /tmp/resume-base.txt
+- Use real contact info only from <tempdir>/resume-base.txt
 - DO NOT add "targeting", "seeking", or "applying for" in the resume
   header. The tailoring should show through content, not a label.
 - Each bullet is one achievement, not a paragraph. Split bullets that wrap
@@ -211,7 +214,7 @@ Rules:
 
 ```
 Read the job analysis at tailored-resumes/<company>-<role>/analysis.md.
-Read the base resume text from /tmp/resume-base.txt.
+Read the base resume text from <tempdir>/resume-base.txt.
 
 Write a tailored cover letter saved to tailored-resumes/<company>-<role>/CoverLetter.md.
 
@@ -231,7 +234,7 @@ Rules:
 - Grammar must be flawless. Read each sentence aloud — if it sounds like
   a template, rewrite it.
 - NEVER fabricate experience or credentials
-- All achievements must be traceable to /tmp/resume-base.txt
+- All achievements must be traceable to <tempdir>/resume-base.txt
 - Avoid AI writing patterns: no filler phrases, no adverbs, no passive voice, no em dashes, no vague declaratives
 ```
 
@@ -248,7 +251,7 @@ Read:
 - tailored-resumes/<company>-<role>/analysis.md (job requirements)
 - tailored-resumes/<company>-<role>/Resume.md (tailored resume)
 - tailored-resumes/<company>-<role>/CoverLetter.md (tailored cover letter)
-- /tmp/resume-base.txt (base resume — ground truth)
+- <tempdir>/resume-base.txt (base resume — ground truth)
 
 Audit both documents and save your report to tailored-resumes/<company>-<role>/audit-round-<N>.md
 (where N is the round number, starting at 1).
@@ -261,7 +264,7 @@ Score each criteria from 0-100 and return an overall score (average of all):
 2. ATS Parsability: Standard section headings, no images/tables/icons, plain text.
    Deduct for any non-standard formatting, missing section labels, or complex structures.
 
-3. No Fabrication: Cross-reference every claim in the resume and cover letter against /tmp/resume-base.txt.
+3. No Fabrication: Cross-reference every claim in the resume and cover letter against <tempdir>/resume-base.txt.
    Deduct heavily for any claim not in the base resume. Flag exact fabricated lines.
 
 4. Length: Resume ≤2 pages, cover letter ≤1 page (markdown equivalent, ~80 lines per page).
@@ -302,7 +305,7 @@ Output format:
 - Fixes: [list]
 
 ### 3. No Fabrication: X/100
-- Flagged claims: [list exact lines that aren't in /tmp/resume-base.txt]
+- Flagged claims: [list exact lines that aren't in <tempdir>/resume-base.txt]
 - Verdict: [pass if none, fail with details otherwise]
 
 ### 4. Length: X/100
@@ -366,28 +369,28 @@ Apply the user's chosen style from Step 0 to generate the final output.
 1. Get the design system for the chosen style:
 
    - **Styles 1-3 (classic/modern/minimal)**: Run UI-UX-Pro-Max:
-     `python3 skills/ui-ux-pro-max/scripts/search.py "resume <keywords>" --design-system`
+     `python skills/ui-ux-pro-max/scripts/search.py "resume <keywords>" --design-system`
      Extract colors, fonts, spacing from the design system output.
 
    - **Style 4 (keep mine)**: Read `resume.docx` styles:
-     `python3 -c "import docx; doc=docx.Document('resume.docx'); s=doc.styles['Normal']; print(s.font.name, s.font.size, s.font.color.rgb)"`
+     `python -c "import docx; doc=docx.Document('resume.docx'); s=doc.styles['Normal']; print(s.font.name, s.font.size, s.font.color.rgb)"`
      Extract the master document's fonts, colors, and margins as the design system.
 
    - **Custom URL**: Use the design system extracted during Step 0 preview.
 
 2. Generate HTML from markdown:
-   `pandoc tailored-resumes/<company>-<role>/Resume.md -t html5 -o /tmp/resume.html`
-   `pandoc tailored-resumes/<company>-<role>/CoverLetter.md -t html5 -o /tmp/cover.html`
+   `pandoc tailored-resumes/<company>-<role>/Resume.md -t html5 -o <tempdir>/resume.html`
+   `pandoc tailored-resumes/<company>-<role>/CoverLetter.md -t html5 -o <tempdir>/cover.html`
 
 3. Inject the design system as CSS into the HTML using `templates/resume/base.html`
    and `templates/resume/cover-base.html` as the foundation.
 
 4. Convert to the user's chosen format:
-   - **DOCX**: `pandoc /tmp/resume.html -o tailored-resumes/<company>-<role>/Resume.docx`
-   - **PDF**: `weasyprint /tmp/resume.html tailored-resumes/<company>-<role>/Resume.pdf`
+   - **DOCX**: `pandoc <tempdir>/resume.html -o tailored-resumes/<company>-<role>/Resume.docx`
+   - **PDF**: `weasyprint <tempdir>/resume.html tailored-resumes/<company>-<role>/Resume.pdf`
    - Same for cover letter.
 
-   If weasyprint is not available, try `python3 -c "import weasyprint"`
+   If weasyprint is not available, try `python -c "import weasyprint"`
    or fall back to pandoc + wkhtmltopdf for PDF.
 
 5. Print final summary:
@@ -407,20 +410,20 @@ Style: <chosen> | Format: <format> | Score: X/100
      audit-round-1.md (up to 3)
 ```
 
-6. Clean temporary files: remove `/tmp/resume-base.txt`, `/tmp/*.html`, previews.
+6. Clean temporary files: remove `<tempdir>/resume-base.txt`, `<tempdir>/*.html`, previews.
    Do not remove `tailored-resumes/` contents.
 
 ## Pitfalls
 
-- If MoA presets are not configured, stop early and tell the user: "MoA presets are missing. Run `python3 scripts/setup.py` to configure them."
+- If MoA presets are not configured, stop early and tell the user: "MoA presets are missing. Run `python scripts/setup.py` to configure them."
 - If `resume.docx` is not found in the project root, stop and ask the user to place it there.
 - Subagents timeout after 50 iterations by default. If a subagent times out, re-spawn it
   (respecting the max retry limit for that step) with a narrower scope.
 - Fabrication is the hardest failure mode. Auditor must cross-reference every major claim
-  against `/tmp/resume-base.txt`. If uncertain, flag it.
+  against `<tempdir>/resume-base.txt`. If uncertain, flag it.
 - The `<company>-<role>` slug is derived from the analysis. If the Analyzer fails to
   extract these, use a fallback like `job-<timestamp>`.
-- If pandoc is not installed, stop and tell the user: "Pandoc is required. Install: brew install pandoc"
+- If pandoc is not installed, stop and tell the user: "Pandoc is required. Install: https://pandoc.org/installing.html"
 - If the user's chosen style generates visual errors, fall back to the default modern style.
 
 ## Verification

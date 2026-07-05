@@ -240,6 +240,47 @@ def test_setup_moa_missing_decline():
         setup.setup_moa()
 
 
+def test_check_toolsets_parses_enabled():
+    """Parses hermes tools list output into enabled set."""
+    fake_out = "terminal\t(Linux)\tenabled\n" \
+               "delegation\t(Linux)\tenabled\n" \
+               "web\t(Linux)\tdisabled\n"
+    with patch.object(setup, "run", return_value=(0, fake_out)), \
+         patch.object(setup, "_enable_toolset") as mock_enable:
+        setup.check_toolsets()
+        mock_enable.assert_called_once_with("web")
+
+
+def test_check_toolsets_handles_empty():
+    """Handles empty tools list output gracefully."""
+    with patch.object(setup, "run", return_value=(0, "")), \
+         patch.object(setup, "_enable_toolset") as mock_enable:
+        setup.check_toolsets()
+        assert mock_enable.call_count == 3
+
+
+def test_install_skills_handles_missing_src():
+    """Prints error when skill source dir is missing."""
+    with patch("pathlib.Path.exists", return_value=False), \
+         patch.object(setup, "err") as mock_err, \
+         patch.object(setup, "ok"), \
+         patch.object(setup, "run", return_value=(0, "apply-job")):
+        setup.install_skills()
+        mock_err.assert_called()
+
+
+def test_install_skills_verifies_registration():
+    """Verifies skills registered with Hermes after install."""
+    with patch("pathlib.Path.exists", return_value=True), \
+         patch("shutil.rmtree"), \
+         patch("shutil.copytree"), \
+         patch.object(setup, "ok") as mock_ok, \
+         patch.object(setup, "run", return_value=(0, "apply-job\nstop-slop\nui-ux-pro-max")):
+        setup.install_skills()
+        registered = any("registered" in str(c) for c in mock_ok.call_args_list)
+        assert registered
+
+
 if __name__ == "__main__":
     import traceback
     passed = 0
