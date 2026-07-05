@@ -224,8 +224,6 @@ hermes-apply-job/
   resume.docx                 ← Your resume (gitignored)
   config/
     moa-presets.yaml          ← MoA model configuration
-  docs/
-                              ← Historical planning artifacts
   scripts/
     setup.py                  ← One-command setup
   tests/
