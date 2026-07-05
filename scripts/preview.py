@@ -2,13 +2,12 @@
 """Generate a styled resume preview from lorem ipsum content.
 
 Usage:
-    python scripts/preview.py <style> [--format docx|pdf]
+    python scripts/preview.py <style>
 
-Styles: classic, modern, minimal, keep-mine
+Styles: classic, modern, minimal
     classic    — serif, traditional
     modern     — sans-serif, blue accent
     minimal    — clean monochrome
-    keep-mine  — reads resume.docx styles
 
 Output: previews/<style>-resume.html, previews/<style>-coverletter.html
 """
@@ -45,13 +44,6 @@ STYLES = {
         "bg": "#ffffff",
         "name": "Clean Minimal",
     },
-    "keep-mine": {
-        "body-font": "system-ui, sans-serif",
-        "heading-font": "system-ui, sans-serif",
-        "accent-color": "#2563EB",
-        "bg": "#ffffff",
-        "name": "Your Style",
-    },
 }
 
 RESUME_CSS = """
@@ -64,7 +56,11 @@ li { margin-bottom: 0.35rem; }
 """
 
 
-def generate_preview(style_key, format_type):
+def generate_preview(style_key):
+    if style_key == "keep-mine":
+        print("Style 4 (keep-mine) requires a real resume.docx. Create one with setup.py and use /apply-job.")
+        sys.exit(1)
+
     if style_key not in STYLES:
         print(f"Unknown style: {style_key}. Choose: {', '.join(STYLES)}")
         sys.exit(1)
@@ -84,25 +80,23 @@ def generate_preview(style_key, format_type):
     resume_md = LOREM_RESUME.read_text()
     cover_md = LOREM_COVER.read_text()
 
-    resume_html = f"""<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="UTF-8"><title>Resume Preview — {style['name']}</title>
-<style>{css}</style></head>
-<body>
-<pre style="font-family: {{BODY_FONT}}; line-height: 1.6; white-space: pre-wrap;">
-{resume_md}
-</pre>
-</body></html>""".replace("{{BODY_FONT}}", style["body-font"])
+    resume_html = (
+        '<!DOCTYPE html>\n<html lang="en">\n'
+        '<head><meta charset="UTF-8">'
+        f'<title>Resume Preview — {style["name"]}</title>\n'
+        f'<style>{css}</style></head>\n<body>\n'
+        f'<pre style="font-family: {style["body-font"]}; line-height: 1.6; white-space: pre-wrap;">\n'
+        f'{resume_md}\n</pre>\n</body></html>'
+    )
 
-    cover_html = f"""<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="UTF-8"><title>Cover Letter Preview — {style['name']}</title>
-<style>{css}</style></head>
-<body>
-<pre style="font-family: {{BODY_FONT}}; line-height: 1.6; white-space: pre-wrap;">
-{cover_md}
-</pre>
-</body></html>""".replace("{{BODY_FONT}}", style["body-font"])
+    cover_html = (
+        '<!DOCTYPE html>\n<html lang="en">\n'
+        '<head><meta charset="UTF-8">'
+        f'<title>Cover Letter Preview — {style["name"]}</title>\n'
+        f'<style>{css}</style></head>\n<body>\n'
+        f'<pre style="font-family: {style["body-font"]}; line-height: 1.6; white-space: pre-wrap;">\n'
+        f'{cover_md}\n</pre>\n</body></html>'
+    )
 
     PREVIEWS_DIR.mkdir(exist_ok=True)
     (PREVIEWS_DIR / f"{style_key}-resume.html").write_text(resume_html)
@@ -114,9 +108,8 @@ def generate_preview(style_key, format_type):
 def main():
     parser = argparse.ArgumentParser(description="Generate styled resume preview")
     parser.add_argument("style", choices=list(STYLES), help="Style name")
-    parser.add_argument("--format", "-f", choices=["docx", "pdf"], default="docx", help="Output format (cosmetic)")
     args = parser.parse_args()
-    generate_preview(args.style, args.format)
+    generate_preview(args.style)
 
 
 if __name__ == "__main__":
