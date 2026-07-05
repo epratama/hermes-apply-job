@@ -6,6 +6,7 @@
 #
 # Each preset defines which models Hermes uses for each role
 # in the resume optimization pipeline. All defaults use OpenRouter.
+# Content quality depends on model choice. See README.md for recommendations.
 # Edit the model IDs below to use your own provider/models.
 #
 # See README.md for role descriptions and customization examples.

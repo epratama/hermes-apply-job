@@ -168,6 +168,29 @@ All other preset options (`reference_max_tokens`, etc.) remain unchanged.
 See [MoA documentation](https://hermes-agent.nousresearch.com/docs/user-guide/features/mixture-of-agents)
 for all configuration options (temperature, max tokens, multi-provider mixing).
 
+### Model Quality
+
+> **Disclaimer:** The quality of your tailored resume and cover letter
+> depends entirely on the underlying LLM's writing ability,
+> instruction-following, and factuality. The pipeline is deterministic —
+> but the words that land on the page come from the model you choose.
+
+| Role | What to look for | Priority |
+|------|-----------------|----------|
+| **Resume Writer** | Strong instruction-following, professional tone, conciseness, avoids cliché | **Highest** |
+| **Cover Letter Writer** | Natural narrative voice, varied sentence structure, human-sounding prose | High |
+| **Job Analyzer** | Fast extraction, attention to detail, structured output | Medium |
+| **Auditor** | Critical reasoning, cross-referencing, pattern detection (AI slop) | High |
+
+The `resume-writer` preset matters most — it generates the content that
+employers read. Prioritize a model with strong professional writing.
+
+**Budget tips:**
+- **Writer + Auditor:** invest here. Strong models catch fabrication and slop.
+- **Analyzer:** cheaper/faster models work well — it's extraction, not generation.
+- **Swap one preset at a time** — change only `resume-writer` first,
+  keep analyzer and auditor on cheaper models, compare audit scores.
+
 ## Output Formats
 
 Style and format are chosen at the start of each `/apply-job` run — not at setup time.
