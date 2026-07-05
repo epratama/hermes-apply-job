@@ -167,25 +167,77 @@ def test_ask_auto_yes():
     assert result is True
 
 
-def test_main_yes_flag():
-    """--yes flag sets _AUTO_YES to True in main()."""
-    with patch("sys.argv", ["setup.py", "--resume", "/tmp/fake.pdf", "--yes"]):
-        try:
-            setup.main()
-        except SystemExit:
-            pass
-    assert setup._AUTO_YES is True
+def test_ask_interactive_yes():
+    """ask() returns True for y/yes/Y/YES/empty."""
+    with patch.object(setup, "_AUTO_YES", False):
+        with patch("builtins.input") as mock_input:
+            for answer in ("", "y", "yes", "Y", "yEs"):
+                mock_input.return_value = answer
+                assert setup.ask("Prompt?") is True
 
 
-def test_main_no_yes_flag():
-    """Without --yes flag, _AUTO_YES remains False in main()."""
-    setup._AUTO_YES = False  # reset in case prior test leaked
-    with patch("sys.argv", ["setup.py", "--resume", "/tmp/fake.pdf"]):
-        try:
-            setup.main()
-        except SystemExit:
-            pass
-    assert setup._AUTO_YES is False
+def test_ask_interactive_no():
+    """ask() returns False for n/no/N/no thanks/anything else."""
+    with patch.object(setup, "_AUTO_YES", False):
+        with patch("builtins.input") as mock_input:
+            for answer in ("n", "no", "N", "No", "nope"):
+                mock_input.return_value = answer
+                assert setup.ask("Prompt?") is False
+
+
+def test_run_success():
+    """run() returns (0, stdout) on success."""
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.returncode = 0
+        mock_run.return_value.stdout = "hello\n"
+        rc, out = setup.run("echo hello")
+    assert rc == 0
+    assert out == "hello"
+
+
+def test_run_failure():
+    """run() returns (returncode, '') on nonzero exit."""
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.returncode = 1
+        mock_run.return_value.stdout = ""
+        rc, out = setup.run("false")
+    assert rc == 1
+    assert out == ""
+
+
+def test_run_filenotfound():
+    """run() returns (-1, '') when binary not found."""
+    with patch("subprocess.run", side_effect=FileNotFoundError):
+        rc, out = setup.run("nonexistent_binary")
+    assert rc == -1
+    assert out == ""
+
+
+def test_setup_moa_all_present():
+    """setup_moa skips when all presets already configured."""
+    with patch.object(setup, "load_moa_defaults", return_value="moa:\n  presets:\n    test:"), \
+         patch.object(setup, "_detect_moa_presets", return_value={"resume-analyzer", "resume-writer", "resume-auditor"}):
+        setup.setup_moa()  # should return early without asking
+
+
+def test_setup_moa_missing_with_merge():
+    """setup_moa merges defaults when user accepts."""
+    moa_content = "moa:\n  presets:\n    resume-analyzer:\n"
+    with patch.object(setup, "load_moa_defaults", return_value=moa_content), \
+         patch.object(setup, "_detect_moa_presets", return_value=set()), \
+         patch.object(setup, "ask", return_value=True), \
+         patch.object(setup, "load_config", return_value=""), \
+         patch.object(setup, "merge_moa_config", return_value=True):
+        setup.setup_moa()
+
+
+def test_setup_moa_missing_decline():
+    """setup_moa skips merge when user declines."""
+    moa_content = "moa:\n  presets:\n    resume-analyzer:\n"
+    with patch.object(setup, "load_moa_defaults", return_value=moa_content), \
+         patch.object(setup, "_detect_moa_presets", return_value=set()), \
+         patch.object(setup, "ask", return_value=False):
+        setup.setup_moa()
 
 
 if __name__ == "__main__":

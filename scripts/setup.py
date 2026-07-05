@@ -18,8 +18,6 @@ from pathlib import Path
 
 SYSTEM = platform.system()
 IS_WINDOWS = SYSTEM == "Windows"
-IS_MACOS = SYSTEM == "Darwin"
-IS_LINUX = SYSTEM == "Linux"
 DEVNULL = "NUL" if IS_WINDOWS else "/dev/null"
 
 HERMES_URL = "https://hermes-agent.nousresearch.com/"
@@ -212,16 +210,6 @@ def _detect_moa_presets():
     return existing
 
 
-def _validate_moa():
-    rc, out = run(f"hermes moa list 2>{DEVNULL}")
-    if rc == 0 and out:
-        ok("hermes moa list succeeded")
-        for line in out.split("\n"):
-            print(f"    {line.strip()}")
-        return
-    warn("Could not validate with hermes moa list")
-
-
 def setup_moa():
     header("MoA Presets")
     moa_content = load_moa_defaults()
@@ -249,8 +237,6 @@ def setup_moa():
         did_merge = merge_moa_config(load_config(), moa_content)
         if did_merge:
             ok("MoA presets merged")
-            header("Validation")
-            _validate_moa()
     else:
         warn("Skipped MoA config. Run setup again or edit config manually.")
         print("  Edit config/moa-presets.yaml and re-run: python3 scripts/setup.py")
@@ -271,17 +257,7 @@ def main():
     global _AUTO_YES
     _AUTO_YES = args.yes
 
-    url = "github.com/epratama/hermes-apply-job"
-    w = len(url) + 4
-    h_bar = "\u2550"
-    h_title = "Hermes Apply-Job \u2014 Setup"
-    h_author = "by Eky Pratama"
-    print(f"{C_BOLD}\u2554{h_bar * w}\u2557{C_RESET}")
-    print(f"{C_BOLD}\u2551{h_title:^{w}}\u2551{C_RESET}")
-    print(f"{C_BOLD}\u2551  {url}  \u2551{C_RESET}")
-    print(f"{C_BOLD}\u2551{h_author:^{w}}\u2551{C_RESET}")
-    print(f"{C_BOLD}\u255a{h_bar * w}\u255d{C_RESET}")
-    print()
+    print(f"\n{C_BOLD}Hermes Apply-Job — Setup — github.com/epratama/hermes-apply-job{C_RESET}\n")
 
     check_hermes()
     check_toolsets()

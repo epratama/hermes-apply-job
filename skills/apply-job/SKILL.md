@@ -98,7 +98,7 @@ Last used: <style> (<format>)
    - For each style {1-classic, 2-modern, 3-minimal, 4-keep mine}:
      * Run `python3 skills/ui-ux-pro-max/scripts/search.py "<keywords>" --design-system`
        to get a design system (colors, typography, spacing)
-     * For style 4: read `resume.docx` styles via `python3 -c "import docx; doc=docx.Document('resume.docx'); print(doc.styles['Normal'].font.name)"`
+      * For style 4: extract `resume.docx` styles (see Step 7 for the full extraction command)
      * Inject the lorem ipsum content + design system CSS into `templates/resume/base.html`
      * Save to `previews/<style>-resume.html` and `previews/<style>-coverletter.html`
    - Print the generated files with descriptions
@@ -380,7 +380,7 @@ Apply the user's chosen style from Step 0 to generate the final output.
    `pandoc tailored-resumes/<company>-<role>/CoverLetter.md -t html5 -o /tmp/cover.html`
 
 3. Inject the design system as CSS into the HTML using `templates/resume/base.html`
-   and `templates/resume/base.css` as the foundation.
+   and `templates/resume/cover-base.html` as the foundation.
 
 4. Convert to the user's chosen format:
    - **DOCX**: `pandoc /tmp/resume.html -o tailored-resumes/<company>-<role>/Resume.docx`
