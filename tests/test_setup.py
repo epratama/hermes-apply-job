@@ -281,6 +281,35 @@ def test_install_skills_verifies_registration():
         assert registered
 
 
+def test_install_skills_not_detected():
+    """Warns when skills are not detected by Hermes after install."""
+    with patch("pathlib.Path.exists", return_value=True), \
+         patch("shutil.rmtree"), \
+         patch("shutil.copytree"), \
+         patch.object(setup, "warn") as mock_warn, \
+         patch.object(setup, "run", return_value=(0, "unrelated-skill")):
+        setup.install_skills()
+        mock_warn.assert_called()
+
+
+def test_setup_moa_partial_existing():
+    """Shows already-configured presets when some exist."""
+    moa_content = "moa:\n  presets:\n    resume-analyzer:\n"
+    with patch.object(setup, "load_moa_defaults", return_value=moa_content), \
+         patch.object(setup, "_detect_moa_presets", return_value={"resume-analyzer"}), \
+         patch.object(setup, "ask", return_value=False):
+        setup.setup_moa()
+        # should print "Already configured: resume-analyzer"
+
+
+def test_detect_moa_presets_parses_output():
+    """Parses hermes moa list output into a set of preset names."""
+    fake_out = "resume-analyzer (active)\nresume-writer (active)\ndefault (active)\n"
+    with patch.object(setup, "run", return_value=(0, fake_out)):
+        result = setup._detect_moa_presets()
+    assert result == {"resume-analyzer", "resume-writer"}
+
+
 if __name__ == "__main__":
     import traceback
     passed = 0

@@ -40,7 +40,7 @@ moa:
         model: deepseek/deepseek-v4-pro
       reference_max_tokens: 800
 
-    # resume-auditor — Scores output on 6 criteria. Two independent
+    # resume-auditor — Scores output on 7 criteria. Two independent
     # critiques feed into one verdict.
     resume-auditor:
       reference_models:

@@ -95,7 +95,7 @@ style or browse Typst Universe for design inspiration.
 ### Step 1 — Pre-Flight Checks
 
 Verifies `resume.docx` exists in the project root, converts it to text via
-pandoc (`/tmp/resume-base.txt`) for all subagents to reference. Stops if
+pandoc (`<tempdir>/resume-base.txt`) for all subagents to reference. Stops if
 pandoc is not installed.
 
 ### Step 2 — Job Analyzer (MoA: `resume-analyzer`)
@@ -173,8 +173,8 @@ Hermes generates styled output via:
 2. **HTML injection** — content + design system CSS injected into
    `templates/resume/base.html` and `templates/resume/cover-base.html`
 3. **Conversion** — pandoc converts markdown → HTML, then:
-   - **DOCX**: `pandoc /tmp/resume.html -o Resume.docx`
-   - **PDF**: `weasyprint /tmp/resume.html Resume.pdf` (pandoc + wkhtmltopdf as fallback)
+    - **DOCX**: `pandoc <tempdir>/resume.html -o Resume.docx`
+    - **PDF**: `weasyprint <tempdir>/resume.html Resume.pdf` (pandoc + wkhtmltopdf as fallback)
 
 ## Output
 

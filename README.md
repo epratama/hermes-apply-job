@@ -82,6 +82,8 @@ never committed.
   `python3 scripts/setup.py --resume ~/Documents/my-resume.docx`
 - **PDF or other formats?** The setup script copies whatever file you provide
   and saves it as `resume.docx`. Pandoc is used at runtime to extract text.
+  **Note:** "keep mine" style (style 4) requires an actual DOCX file — it
+  reads your document's fonts and colors with python-docx.
 - **No resume yet?** Write one first. The pipeline tailors existing content
   to job descriptions — it doesn't create a resume from scratch.
 
@@ -186,23 +188,22 @@ preserves your master document's formatting.
 ┌────────────────────────────────────────────────────────────────┐
 │ /apply-job <url>                                               │
 ├──────────────┬──────────────┬──────────────┬───────────────────┤
-│ Step 0       │ Job Analyzer │ Resume Writer│ Cover Letter      │
-│ Style+Format │ (analyzer)   │ (writer)     │ Writer (writer)   │
+│ Step 0       │ Step 1       │ Job Analyzer │ Resume Writer     │
+│ Style+Format │ Pre-Flight   │ (analyzer)   │ (writer)          │
 │ Selection    │              │              │                   │
-│              │ Fetch JD     │ Tailor       │ Draft cover       │
-│ 4 styles     │ Extract      │ resume with  │ letter            │
-│ docx/pdf     │ keywords     │ JD keywords  │                   │
+│              │ Verify       │ Fetch JD     │ Tailor resume     │
+│ 4 styles     │ resume.docx  │ Extract      │ with JD keywords  │
+│ docx/pdf     │ pandoc conv  │ keywords     │                   │
 └──────────────┴──────────────┴──────────────┴───────────────────┘
                           │
-                          ▼
-              ┌─────────────────────┐
-              │ Auditor + Consortium│
-              │ Score across 7 crit │
-              │ Writer↔Auditor loop │
-              │ (up to 3 rounds)    │
-              │ Stop when score ≥90 │
-              └─────────────────────┘
-                          │
+            ┌─────────────┼─────────────┐
+            ▼             ▼             ▼
+   Cover Letter      Auditor       Consortium
+   Writer            Score 7 crit  Writer↔Auditor
+   (writer)          (auditor)     (up to 3 rounds)
+   Draft cover                     Stop when ≥90
+            │             │             │
+            └─────────────┼─────────────┘
                           ▼
               ┌─────────────────────────────┐
               │ Step 7: Generate Output     │
@@ -218,14 +219,18 @@ hermes-apply-job/
   README.md                   ← You are here
   IDEA.md                     ← Full project spec
   AGENTS.md                   ← Hermes auto-loaded context
-  .gitignore                  ← Ignores resume.docx, previews, and output
+  LICENSE                     ← MIT license
+  .gitignore                  ← Ignores resume.docx, previews, __pycache__, and output
   resume.docx                 ← Your resume (gitignored)
   config/
     moa-presets.yaml          ← MoA model configuration
+  docs/
+                              ← Historical planning artifacts
   scripts/
     setup.py                  ← One-command setup
   tests/
     test_setup.py             ← Setup script self-check
+  previews/                   ← Generated lorem ipsum previews (gitignored)
   templates/
     resume/
       base.html               ← ATS-friendly resume template
@@ -237,6 +242,7 @@ hermes-apply-job/
       lorem-coverletter.md    ← Preview placeholder content
     stop-slop/
       SKILL.md                ← AI slop detection
+      LICENSE                 ← MIT license (Hardik Pandya)
       references/
         phrases.md
         structures.md
@@ -245,8 +251,11 @@ hermes-apply-job/
       SKILL.md                ← Design intelligence
       scripts/
         search.py             ← Design system generator
+        core.py               ← CSV search engine
+        design_system.py      ← Design system formatter
       data/                   ← Styles, colors, fonts, UX guidelines
   tailored-resumes/           ← Output directory
+    .gitkeep
     <company>-<role>/
       analysis.md
       Resume.md
