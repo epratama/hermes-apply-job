@@ -5,7 +5,7 @@ using a multi-agent MoA consortium orchestrated by Hermes.
 
 ## How It Works
 
-1. Run `python3 scripts/setup.py --resume <path> [--format md|docx|pdf]` to configure
+1. Run `python3 scripts/setup.py --resume <path>` to configure
 2. Give Hermes `/apply-job <job-listing-url>`
 3. Hermes orchestrates a pipeline: Job Analyzer → Resume Writer → Cover Letter Writer → Auditor → Consortium Loop
 4. Tailored output lands in `tailored-resumes/<company>-<role>/`
@@ -16,7 +16,7 @@ using a multi-agent MoA consortium orchestrated by Hermes.
 - `IDEA.md` — full project spec with MoA presets and pipeline details
 - `scripts/setup.py` — one-command setup (skill install + MoA config + resume copy)
 - `config/moa-presets.yaml` — MoA model configuration
-- `templates/resume/` — Typst resume templates (classic, modern, minimal)
+- `templates/resume/` — HTML templates (base.html, cover-base.html)
 - `tailored-resumes/` — output directory, one subfolder per application
 - `tests/test_setup.py` — setup script self-check tests
 
@@ -39,17 +39,17 @@ See README.md for model details and customization instructions.
 
 ```
 tailored-resumes/<company>-<role>/
-  analysis.md           # Job Analyzer output
-  Resume.md             # Final tailored resume
-  CoverLetter.md        # Final tailored cover letter
-  Resume.pdf            # Final PDF (selected template)
-  CoverLetter.pdf       # Final PDF (selected template)
-  audit-round-1.md      # Auditor reports per round (up to 3)
+  analysis.md              # Job Analyzer output
+  Resume.md                # Final tailored resume (markdown source)
+  CoverLetter.md           # Final tailored cover letter (markdown source)
+  Resume.<docx|pdf>        # Styled output (format chosen at Step 0)
+  CoverLetter.<docx|pdf>   # Styled output (format chosen at Step 0)
+  audit-round-1.md         # Auditor reports per round (up to 3)
   audit-round-2.md
   audit-round-3.md
 ```
 
-Output format (md, docx, or pdf) is selected at setup time via `--format`.
+Output format is chosen at runtime in Step 0 (docx or pdf), not at setup time.
 
 ## Guardrails
 

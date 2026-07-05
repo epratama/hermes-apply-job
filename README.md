@@ -23,7 +23,7 @@ hermes model                 # verify: shows your current provider/model
 Default presets use OpenRouter. See [Customizing Models](#customizing-models)
 to use a different provider.
 
-### 3. Prepare your resume — DOCX or PDF. See [Preparing Your Resume](#preparing-your-resume)
+### 3. Prepare your resume in DOCX format. See [Preparing Your Resume](#preparing-your-resume)
 
 ### 4. Clone and set up
 
@@ -37,7 +37,7 @@ Style and output format are chosen at runtime during `/apply-job`. No flags need
 For an AI agent to run setup unattended, add `--yes`:
 
 ```bash
-python3 scripts/setup.py --resume ~/your-resume.pdf --yes
+python3 scripts/setup.py --resume ~/your-resume.docx --yes
 ```
 
 ### 5. Verify setup
@@ -45,7 +45,7 @@ python3 scripts/setup.py --resume ~/your-resume.pdf --yes
 ```bash
 hermes skills list | grep apply-job   # should show apply-job
 hermes moa list                       # should show 3 presets
-ls resume.pdf                         # should exist
+ls resume.docx                        # should exist
 ```
 
 If any check fails, re-run `python3 scripts/setup.py --resume <path>`.
@@ -64,29 +64,28 @@ the agent how this project works.
 ```
 /apply-job https://example.com/jobs/12345
 ```
-Replace the URL with an actual job listing. After the pipeline runs,
-you'll be asked to pick a resume template — three styles are generated
-for you to choose from. You can also paste a custom Typst Universe URL.
 
-You can also browse all resume templates beforehand:
-https://typst.app/universe/search?q=resume
+Replace the URL with an actual job listing. You'll be asked to choose a style
+and format **before** the pipeline runs — four styles are available
+(classic, modern, minimal, keep mine) in DOCX or PDF output.
+
+You can also browse templates online and paste a Typst Universe URL for
+inspiration: https://typst.app/universe/search?q=resume
 
 ## Preparing Your Resume
 
-The `--resume` flag copies your PDF into the project as `resume.pdf` — this
+The `--resume` flag copies your file into the project as `resume.docx` — this
 is your source of truth for all tailored output. The file is gitignored and
 never committed.
 
-- **Already have a PDF?** Point `--resume` to it:
-  `python3 scripts/setup.py --resume ~/Documents/my-resume.pdf`
-- **Word or Pages?** Convert first:
-  - macOS: File → Export as PDF, or `pandoc resume.docx -o resume.pdf`
-  - Linux: `pandoc resume.docx -o resume.pdf`
-  - Windows: File → Save As → PDF, or `pandoc resume.docx -o resume.pdf`
+- **Already have a DOCX?** Point `--resume` to it:
+  `python3 scripts/setup.py --resume ~/Documents/my-resume.docx`
+- **PDF or other formats?** The setup script copies whatever file you provide
+  and saves it as `resume.docx`. Pandoc is used at runtime to extract text.
 - **No resume yet?** Write one first. The pipeline tailors existing content
   to job descriptions — it doesn't create a resume from scratch.
 
-If `resume.pdf` is missing when you run `/apply-job`, the pipeline stops
+If `resume.docx` is missing when you run `/apply-job`, the pipeline stops
 and asks you to place it there.
 
 ## What the Setup Script Does
@@ -95,12 +94,11 @@ and asks you to place it there.
 
 1. Checks Hermes is installed and toolsets (terminal, delegation, web)
    are enabled
-2. Checks pandoc, typst, and wkhtmltopdf availability and prints OS-specific
-   instructions if you picked docx/pdf output
-3. Copies your resume to the project as `resume.pdf`
-4. Installs the `apply-job` and `stop-slop` skills to `~/.hermes/skills/`
-5. Checks your MoA presets, shows what's missing, asks to merge defaults
-6. Validates everything with Hermes
+2. Copies your resume to the project as `resume.docx`
+3. Installs the `apply-job`, `stop-slop`, and `ui-ux-pro-max` skills to
+   `~/.hermes/skills/`
+4. Checks your MoA presets, shows what's missing, asks to merge defaults
+5. Validates everything with Hermes
 
 Re-run it any time to update your configuration.
 
@@ -178,35 +176,38 @@ You can change styles between job applications without re-running setup.
 | **DOCX** (default) | Editable in Word, Pages, LibreOffice. Make final tweaks before sending. |
 | **PDF** | Print-ready, locked layout. Best for direct submission. |
 
-3 built-in styles (classic, modern, minimal) + browse custom templates at
-https://typst.app/universe/search?q=resume. Choose "keep mine" to preserve
-your master document's formatting.
+4 styles available (classic, modern, minimal, keep mine) + browse custom templates at
+https://typst.app/universe/search?q=resume for design inspiration. "keep mine"
+preserves your master document's formatting.
 
 ## How the Pipeline Works
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│ /apply-job <url>                                             │
-├──────────────┬──────────────┬──────────────┬─────────────────┤
-│ Job Analyzer │ Resume Writer│ Cover Letter │ Auditor         │
-│ (analyzer)   │ (writer)     │ Writer       │ (auditor)       │
-│              │              │ (writer)     │                 │
-│ Fetch JD     │ Tailor       │ Draft cover  │ Score across    │
-│ Extract      │ resume with  │ letter       │ 7 criteria      │
-│ keywords     │ JD keywords  │              │ (target ≥90)    │
-└──────────────┴──────────────┴──────────────┴─────────────────┘
+┌────────────────────────────────────────────────────────────────┐
+│ /apply-job <url>                                               │
+├──────────────┬──────────────┬──────────────┬───────────────────┤
+│ Step 0       │ Job Analyzer │ Resume Writer│ Cover Letter      │
+│ Style+Format │ (analyzer)   │ (writer)     │ Writer (writer)   │
+│ Selection    │              │              │                   │
+│              │ Fetch JD     │ Tailor       │ Draft cover       │
+│ 4 styles     │ Extract      │ resume with  │ letter            │
+│ docx/pdf     │ keywords     │ JD keywords  │                   │
+└──────────────┴──────────────┴──────────────┴───────────────────┘
                           │
                           ▼
               ┌─────────────────────┐
-              │ Consortium Loop     │
-              │ Writer ←→ Auditor   │
+              │ Auditor + Consortium│
+              │ Score across 7 crit │
+              │ Writer↔Auditor loop │
               │ (up to 3 rounds)    │
+              │ Stop when score ≥90 │
               └─────────────────────┘
                           │
                           ▼
               ┌─────────────────────────────┐
-              │ Templates & PDF (3 styles)  │
-              │   Present final output      │
+              │ Step 7: Generate Output     │
+              │ UI-UX-Pro-Max design system │
+              │ HTML/CSS + pandoc/weasyprint│
               └─────────────────────────────┘
 ```
 
@@ -217,8 +218,8 @@ hermes-apply-job/
   README.md                   ← You are here
   IDEA.md                     ← Full project spec
   AGENTS.md                   ← Hermes auto-loaded context
-  .gitignore                  ← Ignores resume.pdf and output
-  resume.pdf                  ← Your resume (gitignored)
+  .gitignore                  ← Ignores resume.docx, previews, and output
+  resume.docx                 ← Your resume (gitignored)
   config/
     moa-presets.yaml          ← MoA model configuration
   scripts/
@@ -227,31 +228,38 @@ hermes-apply-job/
     test_setup.py             ← Setup script self-check
   templates/
     resume/
-      classic.typ             ← Serif, traditional
-      modern.typ              ← Sans-serif, accent
-      minimal.typ             ← Monochrome, ATS
-    coverletter/              ← Matching cover letter templates
+      base.html               ← ATS-friendly resume template
+      cover-base.html         ← ATS-friendly cover letter template
   skills/
     apply-job/
-      SKILL.md                ← The skill source
+      SKILL.md                ← The orchestrator skill
+      lorem-resume.md         ← Preview placeholder content
+      lorem-coverletter.md    ← Preview placeholder content
     stop-slop/
       SKILL.md                ← AI slop detection
       references/
         phrases.md
         structures.md
         examples.md
+    ui-ux-pro-max/
+      SKILL.md                ← Design intelligence
+      scripts/
+        search.py             ← Design system generator
+      data/                   ← Styles, colors, fonts, UX guidelines
   tailored-resumes/           ← Output directory
     <company>-<role>/
       analysis.md
-      Resume.md / .docx / .pdf
-      CoverLetter.md / .docx / .pdf
+      Resume.md
+      CoverLetter.md
+      Resume.<docx|pdf>
+      CoverLetter.<docx|pdf>
       audit-round-1.md
       ...
 ```
 
 ## Guardrails
 
-All claims in the output are traceable to your `resume.pdf`. The auditor
+All claims in the output are traceable to your `resume.docx`. The auditor
 deducts heavily for fabricated experience and flags every suspect line.
 If the JD asks for a skill you don't have, the cover letter acknowledges
 it honestly instead of inventing it.
@@ -286,8 +294,9 @@ install instructions for any missing tools.
 `git pull && python3 scripts/setup.py --resume <path>`
 
 ### My resume is in Word/Pages format
-Convert to PDF first (`pandoc resume.docx -o resume.pdf` or File → Export
-as PDF), then provide the PDF to `--resume`.
+DOCX is the recommended format. The setup script accepts any file and saves
+it as `resume.docx`. Pandoc reads DOCX natively at runtime — no conversion
+needed.
 
 ### I already have MoA presets. Will setup overwrite them?
 No. For fresh configurations, setup merges the defaults and creates a
@@ -302,10 +311,10 @@ again.
 Re-run `/apply-job <url>`. The pipeline regenerates all templates — pick a
 different one. No need to re-run setup.
 
-### How do I use a custom Typst resume template?
+### How do I use a custom resume template for design inspiration?
 Browse https://typst.app/universe/search?q=resume. When the pipeline
-asks for template selection, paste the package URL. Hermes downloads
-and compiles the template for your content.
+asks for style selection, paste the package URL. Hermes extracts the
+design system and applies it to your content via HTML/CSS.
 
 ## License
 

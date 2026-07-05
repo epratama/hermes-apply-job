@@ -9,7 +9,7 @@ for a specific job listing, maximizing interview conversion.
 Run the setup script to install the skill and configure MoA presets:
 
 ```bash
-python3 scripts/setup.py --resume <path-to-your-resume.docx> [--format md|docx|pdf]
+python3 scripts/setup.py --resume <path-to-your-resume.docx>
 ```
 
 The script handles: installs the `apply-job` and `stop-slop` skills, MoA preset configuration, toolsets,
@@ -149,17 +149,19 @@ flagged issues, the Auditor re-scores. Loop stops when:
 
 Hermes presents the final output with a summary of what changed and why.
 
-### Step 6 — Template Selection & PDF Generation
+### Step 6 — Styled Output Generation
 
-Hermes reads the configured `output_format` from the skill config:
-- **md**: no conversion — `.md` files are the final output
-- **docx**: pandoc converts `.md` to `.docx`
-- **pdf**: Typst compiles 3 styled templates (classic, modern, minimal) from
-  `templates/resume/`. User picks one via browser preview links. Falls back to
-  pandoc + wkhtmltopdf if Typst is not installed.
+Style and output format are chosen by the user at the start of `/apply-job`
+(Step 0), not at setup time. Four styles: classic, modern, minimal, keep mine.
 
-If conversion tools are missing, Hermes reports the error and keeps the
-`.md` output.
+Hermes generates styled output via:
+1. **UI-UX-Pro-Max** design system — generates colors, typography, spacing CSS
+   per chosen style
+2. **HTML injection** — content + design system CSS injected into
+   `templates/resume/base.html` and `templates/resume/cover-base.html`
+3. **Conversion** — pandoc converts markdown → HTML, then:
+   - **DOCX**: `pandoc /tmp/resume.html -o Resume.docx`
+   - **PDF**: `weasyprint /tmp/resume.html Resume.pdf` (pandoc + wkhtmltopdf as fallback)
 
 ## Output
 
@@ -167,14 +169,16 @@ If conversion tools are missing, Hermes reports the error and keeps the
 tailored-resumes/
   <company>-<role>/
     analysis.md                  # Job Analyzer output
-    Resume.md / .docx / .pdf     # Final tailored resume
-    CoverLetter.md / .docx / .pdf  # Final tailored cover letter
+    Resume.md                    # Final tailored resume (markdown source)
+    CoverLetter.md               # Final tailored cover letter (markdown source)
+    Resume.<docx|pdf>            # Styled output (format chosen at runtime)
+    CoverLetter.<docx|pdf>       # Styled output (format chosen at runtime)
     audit-round-1.md             # Auditor reports per round
     audit-round-2.md             # (up to 3 rounds)
     audit-round-3.md
 ```
 
-Only the format selected via `--format` is produced (not all three).
+Output format (docx or pdf) and style are chosen at runtime in Step 0.
 
 ## Guardrails (Non-Negotiable)
 

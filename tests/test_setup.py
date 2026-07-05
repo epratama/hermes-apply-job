@@ -12,7 +12,7 @@ import sys
 import tempfile
 import shutil
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 HERE = Path(__file__).parent
 sys.path.insert(0, str(HERE.parent / "scripts"))
@@ -51,39 +51,6 @@ def test_hermes_home_windows_fallback():
          patch.object(Path, "home", return_value=Path("/home/user")):
         result = setup._hermes_home()
     assert result == Path("/home/user/AppData/Local/hermes")
-
-
-def test_check_tool_found():
-    """_check_tool returns True when binary is on PATH."""
-    with patch("shutil.which", return_value="/usr/bin/pandoc"):
-        result = setup._check_tool("pandoc", "pandoc", "https://url", "pdf")
-    assert result is True
-
-
-def test_check_tool_missing_macos():
-    """_check_tool returns False and prints brew instructions on macOS."""
-    with patch("shutil.which", return_value=None), \
-         patch.object(setup, "IS_MACOS", True):
-        result = setup._check_tool("pandoc", "pandoc", "https://url", "pdf")
-    assert result is False
-
-
-def test_check_tool_missing_linux():
-    """_check_tool returns False and prints URL on Linux."""
-    with patch("shutil.which", return_value=None), \
-         patch.object(setup, "IS_LINUX", True), \
-         patch.object(setup, "IS_MACOS", False):
-        result = setup._check_tool("pandoc", "pandoc", "https://url", "pdf")
-    assert result is False
-
-
-def test_check_tool_missing_windows():
-    """_check_tool returns False and prints URL on Windows."""
-    with patch("shutil.which", return_value=None), \
-         patch.object(setup, "IS_WINDOWS", True), \
-         patch.object(setup, "IS_MACOS", False):
-        result = setup._check_tool("pandoc", "pandoc", "https://url", "pdf")
-    assert result is False
 
 
 def test_copy_resume_missing():

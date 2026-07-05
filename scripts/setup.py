@@ -23,8 +23,6 @@ IS_LINUX = SYSTEM == "Linux"
 DEVNULL = "NUL" if IS_WINDOWS else "/dev/null"
 
 HERMES_URL = "https://hermes-agent.nousresearch.com/"
-PANDOC_URL = "https://pandoc.org/installing.html"
-
 IS_TTY = sys.stdout.isatty()
 C_RESET  = "\033[0m"  if IS_TTY else ""
 C_BOLD   = "\033[1m"  if IS_TTY else ""
@@ -118,67 +116,6 @@ def check_toolsets():
         else:
             err(f"{t} toolset not enabled")
             _enable_toolset(t)
-
-
-def _detect_package_manager():
-    """Return (name, install_template) or (None, None)."""
-    if IS_MACOS and shutil.which("brew"):
-        return "brew", "brew install {}"
-    if IS_LINUX:
-        for mgr, tmpl in [("apt-get", "sudo apt-get install -y {}"),
-                          ("dnf", "sudo dnf install -y {}"),
-                          ("pacman", "sudo pacman -S --noconfirm {}")]:
-            if shutil.which(mgr):
-                return mgr, tmpl
-    if IS_WINDOWS and shutil.which("choco"):
-        return "choco", "choco install {} -y"
-    return None, None
-
-
-def _check_tool(name, hint, url, output_format):
-    """Check one tool. If --yes and missing, attempt silent install.
-    Otherwise print OS-specific install instructions.
-    Returns True if found/installed, False otherwise."""
-    if shutil.which(name):
-        ok(f"{name} installed")
-        return True
-    err(f"{name} not found (needed for {output_format} output)")
-    # ponytail: --yes agent path — attempt install via detected package manager
-    if _AUTO_YES:
-        mgr, tmpl = _detect_package_manager()
-        if mgr:
-            rc, _ = run(tmpl.format(name) + f" 2>{DEVNULL}")
-            if rc == 0:
-                ok(f"{name} installed via {mgr}")
-                return True
-            warn(f"Could not install {name} via {mgr}")
-        else:
-            warn(f"No package manager detected — cannot auto-install {name}")
-    if IS_MACOS:
-        warn(f"Install manually: brew install {hint}")
-    elif IS_LINUX:
-        warn(f"Install from: {url}")
-    elif IS_WINDOWS:
-        warn(f"Install from: {url}")
-    return False
-
-
-def check_pandoc_needed(output_format):
-    if output_format == "md":
-        return True
-    if not _check_tool("pandoc", "pandoc", PANDOC_URL, output_format):
-        ok("Output will stay as markdown. Use --format md to avoid this warning.")
-        return False
-    if output_format == "pdf":
-        # typst preferred (modern, fast, beautiful PDFs)
-        if _check_tool("typst", "typst", TYPST_URL, output_format):
-            ok("typst available — 3 resume templates for PDF output")
-        else:
-            # fallback: wkhtmltopdf (basic PDF, no template selection)
-            _check_tool("wkhtmltopdf", "wkhtmltopdf", WKHTML_URL, output_format)
-            warn("typst not installed — basic PDF only (no template selection)")
-            warn("Install typst: brew install typst")
-    return True
 
 
 def copy_resume(resume_path):
@@ -319,15 +256,6 @@ def setup_moa():
         print("  Edit config/moa-presets.yaml and re-run: python3 scripts/setup.py")
 
 
-def set_output_format(output_format):
-    header("Output Format")
-    rc, _ = run(f"hermes config set skills.config.apply-job.output_format {output_format} 2>{DEVNULL}")
-    if rc == 0:
-        ok(f"Output format set to: {output_format}")
-    else:
-        warn(f"Could not set output format. Run manually: hermes config set skills.config.apply-job.output_format {output_format}")
-
-
 def print_summary():
     print(f"\n{C_GREEN}{C_BOLD}Done.{C_RESET}  Style & format chosen at runtime.")
     print(f"  {C_CYAN}/apply-job{C_RESET} <job-listing-url>\n")
@@ -361,9 +289,6 @@ def main():
     install_skills()
     setup_moa()
     print_summary()
-    setup_moa()
-    set_output_format(args.format)
-    print_summary(args.format)
 
 
 if __name__ == "__main__":
