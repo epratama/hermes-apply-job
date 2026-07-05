@@ -56,5 +56,4 @@ Output format is chosen at runtime in Step 0 (docx or pdf), not at setup time.
 - Never fabricate experience. All claims must be traceable to `resume.docx`.
 - If you lack a skill, acknowledge it honestly in the cover letter.
 - Use real contact info only — name, email, phone, LinkedIn from `resume.docx`.
-- Output format is configured at setup. Default is markdown.
 - Use the JD's language style.

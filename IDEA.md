@@ -12,7 +12,7 @@ Run the setup script to install the skill and configure MoA presets:
 python3 scripts/setup.py --resume <path-to-your-resume.docx>
 ```
 
-The script handles: installs the `apply-job` and `stop-slop` skills, MoA preset configuration, toolsets,
+The script handles: installs the `apply-job`, `stop-slop`, and `ui-ux-pro-max` skills, MoA preset configuration, toolsets,
 resume copying, and output format. Re-run anytime to update configuration.
 
 See README.md for prerequisites and troubleshooting.
@@ -85,7 +85,20 @@ MoA preset before spawning each subagent, then restores afterward.
 All intermediate artifacts are saved for auditability: job analysis, auditor
 reports per round, and draft versions.
 
-### Step 1 — Job Analyzer (MoA: `resume-analyzer`)
+### Step 0 — Style & Format Selection
+
+Before any pipeline work, the user chooses a style (classic, modern, minimal,
+keep mine) and output format (docx or pdf). This ensures zero wasted MoA runs
+on the wrong style. The user can also preview lorem ipsum samples of each
+style or browse Typst Universe for design inspiration.
+
+### Step 1 — Pre-Flight Checks
+
+Verifies `resume.docx` exists in the project root, converts it to text via
+pandoc (`/tmp/resume-base.txt`) for all subagents to reference. Stops if
+pandoc is not installed.
+
+### Step 2 — Job Analyzer (MoA: `resume-analyzer`)
 
 Orchestrator switches to `resume-analyzer`, spawns subagent. Fetches the job
 listing URL and extracts:
@@ -98,7 +111,7 @@ Saves structured analysis to `tailored-resumes/<company>-<role>/analysis.md`.
 If the URL is inaccessible or contains no parseable job description, reports
 the failure immediately and stops the pipeline.
 
-### Step 2 — Resume Writer (MoA: `resume-writer`)
+### Step 3 — Resume Writer (MoA: `resume-writer`)
 
 Orchestrator switches to `resume-writer`, spawns subagent. Takes the Job
 Analyzer output + your base resume (`resume.docx`). Produces a tailored
@@ -109,7 +122,7 @@ resume (`tailored-resumes/<company>-<role>/Resume.md`):
 - Keeps to 2 pages equivalent in markdown
 - Uses the JD's language style (enterprise, startup, academic)
 
-### Step 3 — Cover Letter Writer (MoA: `resume-writer`)
+### Step 4 — Cover Letter Writer (MoA: `resume-writer`)
 
 Orchestrator switches to `resume-writer`, spawns subagent (same MoA preset,
 different prompt). Takes the same analysis + your resume. Produces a tailored
@@ -121,7 +134,7 @@ cover letter (`tailored-resumes/<company>-<role>/CoverLetter.md`):
 - Addresses any obvious gap as a growth area, not an invention
 - 1 page equivalent in markdown
 
-### Step 4 — Auditor (MoA: `resume-auditor`)
+### Step 5 — Auditor (MoA: `resume-auditor`)
 
 Orchestrator switches to `resume-auditor`, spawns subagent. Scores both
 documents on:
@@ -140,7 +153,7 @@ documents on:
 Saves the audit to `tailored-resumes/<company>-<role>/audit-round-<N>.md`.
 Returns numeric score and line-item fixes.
 
-### Step 5 — Consortium Loop
+### Step 6 — Consortium Loop
 
 Writer(s) and Auditor iterate. Each round the Writer subagent addresses
 flagged issues, the Auditor re-scores. Loop stops when:
@@ -149,7 +162,7 @@ flagged issues, the Auditor re-scores. Loop stops when:
 
 Hermes presents the final output with a summary of what changed and why.
 
-### Step 6 — Styled Output Generation
+### Step 7 — Styled Output Generation
 
 Style and output format are chosen by the user at the start of `/apply-job`
 (Step 0), not at setup time. Four styles: classic, modern, minimal, keep mine.

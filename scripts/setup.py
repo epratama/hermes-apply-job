@@ -146,7 +146,7 @@ def install_skills():
         shutil.copytree(src, dst)
         ok(f"Installed {name} to {dst}")
 
-    rc, out = run(f"hermes skills list 2>{DEVNULL} | grep -E 'apply-job|stop-slop'")
+    rc, out = run(f"hermes skills list 2>{DEVNULL} | grep -E 'apply-job|stop-slop|ui-ux-pro-max'")
     if rc == 0:
         ok("Skills registered with Hermes")
     else:
@@ -263,7 +263,7 @@ def print_summary():
 
 def main():
     parser = argparse.ArgumentParser(description="Hermes Apply-Job Setup")
-    parser.add_argument("--resume", required=True, help="Path to your resume (DOCX or PDF)")
+    parser.add_argument("--resume", required=True, help="Path to your resume (DOCX recommended; copied as resume.docx)")
     parser.add_argument("--yes", "-y", action="store_true",
                         help="Skip all prompts (for automated/agent-driven setup)")
     args = parser.parse_args()

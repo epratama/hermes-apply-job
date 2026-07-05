@@ -275,8 +275,8 @@ The default models require OpenRouter access. Edit `config/moa-presets.yaml`
 to use models available on your account, then re-run `python3 scripts/setup.py`.
 
 ### Pandoc not found during conversion
-The pipeline falls back to markdown output. Install pandoc with your package
-manager and re-run the pipeline.
+Pandoc is required. The pipeline stops and asks you to install it.
+Install with your package manager and re-run the pipeline.
 
 ### The auditor score stays below 90 after 3 rounds
 The JD might be behind a login wall. The pipeline will prompt you to paste
@@ -287,8 +287,7 @@ Yes. Edit `config/moa-presets.yaml` — change `provider` and `model` values.
 Re-run `python3 scripts/setup.py`. See Customizing Models section above.
 
 ### Does this work on Windows?
-Yes. Hermes Agent supports Windows natively. Setup prints OS-specific
-install instructions for any missing tools.
+Yes. Hermes Agent supports Windows natively.
 
 ### How do I update the skill?
 `git pull && python3 scripts/setup.py --resume <path>`
@@ -327,4 +326,3 @@ MIT — see [LICENSE](LICENSE).
 - [Superpowers](https://github.com/obra/superpowers) by [obra](https://github.com/obra) — Apache 2.0 License
 - [Ponytail](https://github.com/DietrichGebert/ponytail) by [Dietrich Gebert](https://github.com/DietrichGebert) — MIT License
 - [OpenCode](https://github.com/opencode-ai/opencode) — MIT License
-- [Typst](https://github.com/typst/typst) — Apache 2.0 License
