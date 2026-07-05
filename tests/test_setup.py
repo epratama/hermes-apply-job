@@ -213,6 +213,35 @@ def test_run_filenotfound():
     assert out == ""
 
 
+def test_run_no_capture():
+    """run(capture=False) returns '' instead of stripped stdout."""
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value.returncode = 0
+        mock_run.return_value.stdout = "should be ignored\n"
+        rc, out = setup.run("echo hello", capture=False)
+    assert rc == 0
+    assert out == ""
+
+
+def test_enable_toolset_fails():
+    """Warns when hermes tools enable returns non-zero."""
+    with patch.object(setup, "ask", return_value=True), \
+         patch.object(setup, "run", return_value=(1, "")), \
+         patch.object(setup, "warn") as mock_warn:
+        setup._enable_toolset("terminal")
+    assert any("Could not enable" in str(c) for c in mock_warn.call_args_list)
+
+
+def test_setup_moa_no_defaults():
+    """Returns early when moa-presets.yaml is not found."""
+    with patch.object(setup, "load_moa_defaults", return_value=None), \
+         patch.object(setup, "header") as mock_header, \
+         patch.object(setup, "_detect_moa_presets") as mock_detect:
+        setup.setup_moa()
+        mock_header.assert_called_once()
+        mock_detect.assert_not_called()
+
+
 def test_setup_moa_all_present():
     """setup_moa skips when all presets already configured."""
     with patch.object(setup, "load_moa_defaults", return_value="moa:\n  presets:\n    test:"), \
