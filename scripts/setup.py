@@ -15,6 +15,7 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+import re
 
 SYSTEM = platform.system()
 IS_WINDOWS = SYSTEM == "Windows"
@@ -115,6 +116,18 @@ def check_toolsets():
             _enable_toolset(t)
 
 
+def _check_pandoc():
+    """Check pandoc is installed and version >= 2.0. Returns True if ok."""
+    if not shutil.which("pandoc"):
+        return False
+    rc, ver = run("pandoc --version 2>&1")
+    if rc == 0 and ver:
+        match = re.search(r'pandoc\s+(\d+)\.', ver)
+        if match and int(match.group(1)) < 2:
+            warn("Pandoc < 2.0 detected. PDF conversion may be unreliable. Upgrade: https://pandoc.org/installing.html")
+    return True
+
+
 def copy_resume(resume_path):
     header("Resume")
     src = Path(resume_path).expanduser().resolve()
@@ -129,24 +142,14 @@ def copy_resume(resume_path):
         return
 
     ext = src.suffix.lower()
-    if ext in (".md", ".txt"):
-        if not shutil.which("pandoc"):
-            err("Markdown/txt input requires pandoc. Install: https://pandoc.org/installing.html")
+    if ext in (".md", ".txt", ".pdf"):
+        if not _check_pandoc():
+            err("Non-docx input requires pandoc. Install: https://pandoc.org/installing.html")
             sys.exit(1)
         ok(f"Converting {src.name} to resume.docx via pandoc...")
         rc, _ = run(f"pandoc {src} -o {dst}", capture=False)
         if rc != 0:
             err("Pandoc conversion failed. Is your file valid?")
-            sys.exit(1)
-        ok(f"Converted {src.name} to resume.docx")
-    elif ext == ".pdf":
-        if not shutil.which("pandoc"):
-            err("PDF input requires pandoc. Install: https://pandoc.org/installing.html")
-            sys.exit(1)
-        ok(f"Converting {src.name} (first page) to resume.docx via pandoc...")
-        rc, _ = run(f"pandoc {src} -o {dst}", capture=False)
-        if rc != 0:
-            err("Pandoc conversion failed. Is your PDF text-selectable?")
             sys.exit(1)
         ok(f"Converted {src.name} to resume.docx")
     else:
@@ -276,7 +279,7 @@ def print_summary():
 
 def main():
     parser = argparse.ArgumentParser(description="Hermes Apply-Job Setup")
-    parser.add_argument("--resume", required=True,
+    parser.add_argument("--resume",
                         help="Path to your resume (docx/md/txt/pdf; pandoc required for non-docx)")
     parser.add_argument("--yes", "-y", action="store_true",
                         help="Skip all prompts (for automated/agent-driven setup)")
@@ -289,7 +292,10 @@ def main():
 
     check_hermes()
     check_toolsets()
-    copy_resume(args.resume)
+    if args.resume:
+        copy_resume(args.resume)
+    else:
+        warn("No --resume provided. Provide one before running /apply-job.")
     install_skills()
     setup_moa()
     print_summary()

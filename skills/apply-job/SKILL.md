@@ -72,7 +72,7 @@ Which style and format?
 
 ### Step 1 — Pre-Flight Checks
 
-[Step 1 of 7] Verifying prerequisites...
+[Step 1 of 7] Verifying prerequisites (~5s)...
    `python -c "import tempfile; print(tempfile.gettempdir())"` — save the result.
     Use this path everywhere `<tempdir>/` is referenced below.
 2. Verify `resume.docx` exists in the project root. If not, stop and tell the user to place it there.
@@ -80,10 +80,14 @@ Which style and format?
    `pandoc resume.docx -t plain --wrap=none -o <tempdir>/resume-base.txt`
    If pandoc is not available, stop and tell the user: "Pandoc is required.
    Install: https://pandoc.org/installing.html"
+4. Scan `<tempdir>/resume-base.txt` for bracket placeholders like
+   `[your.email@example.com]`, `[phone number]`, `[Company Name]`.
+   If found, stop and tell the user: "Your resume contains template
+   placeholders: <list them>. Replace with real content and re-run setup."
 
 ### Step 2 — Job Analyzer (max 2 retries)
 
-[Step 2 of 7] Analyzing the job listing...
+[Step 2 of 7] Analyzing the job listing (~15s)...
 
 1. Extract the job-listing URL from the `/apply-job` command argument.
 2. Switch model to MoA preset `resume-analyzer`: `/model resume-analyzer --provider moa`
@@ -121,7 +125,7 @@ and save the partial analysis. The orchestrator will ask the user to paste the f
 
 ### Step 3 — Resume Writer (max 1 retry)
 
-[Step 3 of 7] Writing tailored resume...
+[Step 3 of 7] Writing tailored resume (~45s)...
 
 1. Switch model to MoA preset `resume-writer`: `/model resume-writer --provider moa`
 2. Spawn a subagent with toolsets `[terminal]`. Give it this exact prompt:
@@ -161,7 +165,7 @@ Rules:
 
 ### Step 4 — Cover Letter Writer (max 1 retry)
 
-[Step 4 of 7] Writing tailored cover letter...
+[Step 4 of 7] Writing tailored cover letter (~30s)...
 
 1. Switch model to MoA preset `resume-writer`: `/model resume-writer --provider moa`
 2. Spawn a subagent with toolsets `[terminal]`. Give it this exact prompt:
@@ -197,7 +201,7 @@ Rules:
 
 ### Step 5 — Auditor (max 1 retry)
 
-[Step 5 of 7] Auditing documents...
+[Step 5 of 7] Auditing documents (~30s)...
 
 1. Switch model to MoA preset `resume-auditor`: `/model resume-auditor --provider moa`
 2. Spawn a subagent with toolsets `[terminal]`. Give it this exact prompt:
@@ -294,7 +298,7 @@ Output format:
 
 ### Step 6 — Consortium Loop
 
-[Step 6 of 7] Consortium loop — iterating on feedback...
+[Step 6 of 7] Consortium loop — iterating on feedback (~2 min/round)...
 
 For rounds 2 and 3 (max 3 total rounds):
 
@@ -322,7 +326,7 @@ Also fix any AI writing patterns flagged by the auditor (filler phrases, adverbs
 
 ### Step 7 — Generate Styled Output
 
-[Step 7 of 7] Generating styled output...
+[Step 7 of 7] Generating styled output (~10s)...
 
 Apply the user's chosen style from Step 0 to generate the final output.
 

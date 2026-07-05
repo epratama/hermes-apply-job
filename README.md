@@ -32,8 +32,6 @@ git clone https://github.com/epratama/hermes-apply-job && cd hermes-apply-job
 python3 scripts/setup.py --resume ~/your-resume.docx
 ```
 
-Style and output format are chosen at runtime during `/apply-job`. No flags needed.
-
 For an AI agent to run setup unattended, add `--yes`:
 
 ```bash

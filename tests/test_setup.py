@@ -339,6 +339,44 @@ def test_detect_moa_presets_parses_output():
     assert result == {"resume-analyzer", "resume-writer"}
 
 
+def test_check_pandoc_not_installed():
+    """_check_pandoc returns False when pandoc not on PATH."""
+    with patch("shutil.which", return_value=None):
+        assert setup._check_pandoc() is False
+
+
+def test_check_pandoc_old_version():
+    """_check_pandoc warns when pandoc < 2.0."""
+    with patch("shutil.which", return_value="/usr/bin/pandoc"), \
+         patch.object(setup, "run", return_value=(0, "pandoc 1.19.2")), \
+         patch.object(setup, "warn") as mock_warn:
+        result = setup._check_pandoc()
+    assert result is True
+    assert any("2.0" in str(c) for c in mock_warn.call_args_list)
+
+
+def test_check_pandoc_ok():
+    """_check_pandoc returns True without warning for version >= 2.0."""
+    with patch("shutil.which", return_value="/usr/bin/pandoc"), \
+         patch.object(setup, "run", return_value=(0, "pandoc 3.10")), \
+         patch.object(setup, "warn") as mock_warn:
+        assert setup._check_pandoc() is True
+        mock_warn.assert_not_called()
+
+
+def test_main_without_resume():
+    """main() runs without --resume flag; prints warning."""
+    with patch("sys.argv", ["setup.py", "--yes"]), \
+         patch.object(setup, "check_hermes"), \
+         patch.object(setup, "check_toolsets"), \
+         patch.object(setup, "install_skills"), \
+         patch.object(setup, "setup_moa"), \
+         patch.object(setup, "print_summary"), \
+         patch.object(setup, "warn") as mock_warn:
+        setup.main()
+    assert any("resume" in str(c).lower() for c in mock_warn.call_args_list)
+
+
 if __name__ == "__main__":
     import traceback
     passed = 0

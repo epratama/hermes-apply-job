@@ -5,7 +5,7 @@ using a multi-agent MoA consortium orchestrated by Hermes.
 
 ## How It Works
 
-1. Run `python3 scripts/setup.py --resume <path>` to configure
+1. Run `python3 scripts/setup.py [--resume <path>]` to configure
 2. Give Hermes `/apply-job <job-listing-url>`
 3. Hermes orchestrates a pipeline: Step 0 (Style+Format) → Step 1 (Pre-Flight) → Job Analyzer → Resume Writer → Cover Letter Writer → Auditor → Consortium Loop → Step 7 (Generate Output)
 4. Tailored output lands in `tailored-resumes/<company>-<role>/`
