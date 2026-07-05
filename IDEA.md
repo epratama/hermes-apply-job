@@ -89,8 +89,7 @@ reports per round, and draft versions.
 
 Before any pipeline work, the user chooses a style (classic, modern, minimal,
 keep mine) and output format (docx or pdf). This ensures zero wasted MoA runs
-on the wrong style. The user can also preview lorem ipsum samples of each
-style or browse Typst Universe for design inspiration.
+on the wrong style.
 
 ### Step 1 — Pre-Flight Checks
 

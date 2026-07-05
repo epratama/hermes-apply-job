@@ -23,7 +23,7 @@ hermes model                 # verify: shows your current provider/model
 Default presets use OpenRouter. See [Customizing Models](#customizing-models)
 to use a different provider.
 
-### 3. Prepare your resume in DOCX format. See [Preparing Your Resume](#preparing-your-resume)
+### 3. Prepare your resume (docx, md, txt, or pdf). See [Preparing Your Resume](#preparing-your-resume)
 
 ### 4. Clone and set up
 
@@ -90,7 +90,7 @@ and asks you to place it there.
 
 1. Checks Hermes is installed and toolsets (terminal, delegation, web)
    are enabled
-2. Copies your resume to the project as `resume.docx`
+2. Copies or converts your resume to `resume.docx`
 3. Installs the `apply-job`, `stop-slop`, and `ui-ux-pro-max` skills to
    `~/.hermes/skills/`
 4. Checks your MoA presets, shows what's missing, asks to merge defaults
@@ -198,6 +198,8 @@ You can change styles between job applications without re-running setup.
 4 styles available (classic, modern, minimal, keep mine). "keep mine"
 preserves your master document's formatting.
 
+Run `python scripts/preview.py <style>` to preview any style with lorem ipsum content.
+
 ## How the Pipeline Works
 
 ```
@@ -242,6 +244,7 @@ hermes-apply-job/
     moa-presets.yaml          ← MoA model configuration
   scripts/
     setup.py                  ← One-command setup
+    preview.py                ← Style preview generator
   tests/
     test_setup.py             ← Setup script self-check
   previews/                   ← Generated lorem ipsum previews (gitignored)
@@ -327,10 +330,6 @@ prints the presets for manual addition to avoid YAML merge issues.
 ### How do I change models after setup?
 Edit `config/moa-presets.yaml` and run `python3 scripts/setup.py --resume <path>`
 again.
-
-### How do I change the resume template?
-Re-run `/apply-job <url>`. The pipeline regenerates all templates — pick a
-different one. No need to re-run setup.
 
 ### How do I change the resume template?
 Re-run `/apply-job <url>`. The pipeline regenerates all templates — pick a
