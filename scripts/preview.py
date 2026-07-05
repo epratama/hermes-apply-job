@@ -31,8 +31,8 @@ STYLES = {
         "name": "Classic Serif",
     },
     "modern": {
-        "body-font": "Inter, system-ui, sans-serif",
-        "heading-font": "Inter, system-ui, sans-serif",
+        "body-font": 'system-ui, -apple-system, "Segoe UI", sans-serif',
+        "heading-font": 'system-ui, -apple-system, "Segoe UI", sans-serif',
         "accent-color": "#2563EB",
         "bg": "#ffffff",
         "name": "Modern Sans",

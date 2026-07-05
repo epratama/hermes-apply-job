@@ -336,9 +336,10 @@ Apply the user's chosen style from Step 0 to generate the final output.
      `python skills/ui-ux-pro-max/scripts/search.py "resume <keywords>" --design-system`
      Extract colors, fonts, spacing from the design system output.
 
-   - **Style 4 (keep mine)**: Read `resume.docx` styles:
-     `python -c "import docx; doc=docx.Document('resume.docx'); s=doc.styles['Normal']; print(s.font.name, s.font.size, s.font.color.rgb)"`
-     Extract the master document's fonts, colors, and margins as the design system.
+   - **Style 4 (keep mine)**: Extract `resume.docx` style:
+     `python -c "import docx; d=docx.Document('resume.docx'); n=d.styles['Normal']; hs=[s for s in d.styles if s.type==1]; h=hs[0] if hs else n; print(f'{n.font.name}|{n.font.size}|{h.font.name}|{n.font.color.rgb}')"`
+     Parse: body-font | body-size | heading-font | accent-color.
+     Use these as the design system for the styled output.
 
    - **Custom URL**: Use the design system extracted during Step 0 preview.
 
