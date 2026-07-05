@@ -50,10 +50,6 @@ Do NOT run any pipeline steps until the user has chosen a style and format.
                Choose Your Resume Style & Format
 ═══════════════════════════════════════════════════════════════════════
 
-Before I tailor your resume, pick how you want it to look.
-
-📂 Browse templates: https://typst.app/universe/search?q=resume
-
 Styles:
   1. classic      Serif, traditional, horizontal rules
   2. modern       Sans-serif (Inter), subtle blue accent
@@ -61,70 +57,22 @@ Styles:
   4. keep mine    Preserve your master resume's existing style
 
 Output format:
-  docx           Editable in Word, Pages, LibreOffice (tweak before sending)
-  pdf            Print-ready, locked layout (best for direct submission)
-
-What would you like to do?
-
-  ↳ Preview first  — See lorem ipsum samples of every style
-    Reply: "preview"
-
-  ↳ Pick and go    — Choose a style + format, start immediately
-    Reply: "2 docx" or "modern pdf" or "4"
-
-  ↳ Browse online  — Found something on Typst Universe?
-    Reply: paste the URL
-
-⚠ Your master resume.docx is never modified. Styles only apply to the
-  tailored output you submit to employers.
-  "4 — keep mine" means your tailored resumes will use the same fonts,
-  colors, and layout as your master document.
+  docx           Editable in Word, Pages, LibreOffice
+  pdf            Print-ready, locked layout
 
 Which style and format?
+  Reply: "2 docx" or "modern pdf" or "4"
 ```
 
-If the user has a saved preference from a previous run, prepend:
-```
-Last used: <style> (<format>)
-  ↵ Press Enter to use "<style> <format>"
-  Or: 1, 2, 3, 4, paste URL, or "preview"
-```
-
-2. Handle the user's response based on what they say:
-
-   **"preview"** → Generate lorem ipsum previews for all 4 styles:
-   - Read lorem ipsum content from `skills/apply-job/lorem-resume.md`
-     and `skills/apply-job/lorem-coverletter.md` (ships with the skill)
-   - For each style {1-classic, 2-modern, 3-minimal, 4-keep mine}:
-     * Run `python skills/ui-ux-pro-max/scripts/search.py "<keywords>" --design-system`
-       to get a design system (colors, typography, spacing)
-      * For style 4: extract `resume.docx` styles (see Step 7 for the full extraction command)
-     * Inject the lorem ipsum content + design system CSS into `templates/resume/base.html`
-     * Save to `previews/<style>-resume.html` and `previews/<style>-coverletter.html`
-   - Print the generated files with descriptions
-   - Ask: "Which style and format do you want?"
+2. Handle the user's response:
 
    **Direct pick** ("2 docx", "modern pdf", "4", etc.):
    - If format is missing (just a number or name), ask "DOCX or PDF?"
-   - Save the choice as the user's default
-   - Proceed to Step 1 (pre-flight)
-
-   **Typst Universe URL:**
-   - Extract package name from URL
-   - `typst init @preview/<package>` to download the template
-   - Extract visual design (fonts, colors, layout) from the .typ file
-   - Adapt to single-column if needed (ATS compatibility)
-   - Generate a lorem ipsum preview
-   - Print the preview path + design details
-   - Ask "Use this style? ('yes' docx/pdf to save and start)"
-
-   **Enter (no input):**
-   - Use the previously saved style+format
    - Proceed to Step 1
 
 ### Step 1 — Pre-Flight Checks
 
-1. Resolve the platform temp directory:
+[Step 1 of 7] Verifying prerequisites...
    `python -c "import tempfile; print(tempfile.gettempdir())"` — save the result.
     Use this path everywhere `<tempdir>/` is referenced below.
 2. Verify `resume.docx` exists in the project root. If not, stop and tell the user to place it there.
@@ -134,6 +82,8 @@ Last used: <style> (<format>)
    Install: https://pandoc.org/installing.html"
 
 ### Step 2 — Job Analyzer (max 2 retries)
+
+[Step 2 of 7] Analyzing the job listing...
 
 1. Extract the job-listing URL from the `/apply-job` command argument.
 2. Switch model to MoA preset `resume-analyzer`: `/model resume-analyzer --provider moa`
@@ -170,6 +120,8 @@ and save the partial analysis. The orchestrator will ask the user to paste the f
 7. Switch model back to your default: `/model default --provider moa`
 
 ### Step 3 — Resume Writer (max 1 retry)
+
+[Step 3 of 7] Writing tailored resume...
 
 1. Switch model to MoA preset `resume-writer`: `/model resume-writer --provider moa`
 2. Spawn a subagent with toolsets `[terminal]`. Give it this exact prompt:
@@ -209,6 +161,8 @@ Rules:
 
 ### Step 4 — Cover Letter Writer (max 1 retry)
 
+[Step 4 of 7] Writing tailored cover letter...
+
 1. Switch model to MoA preset `resume-writer`: `/model resume-writer --provider moa`
 2. Spawn a subagent with toolsets `[terminal]`. Give it this exact prompt:
 
@@ -242,6 +196,8 @@ Rules:
 4. Switch model back to default.
 
 ### Step 5 — Auditor (max 1 retry)
+
+[Step 5 of 7] Auditing documents...
 
 1. Switch model to MoA preset `resume-auditor`: `/model resume-auditor --provider moa`
 2. Spawn a subagent with toolsets `[terminal]`. Give it this exact prompt:
@@ -338,6 +294,8 @@ Output format:
 
 ### Step 6 — Consortium Loop
 
+[Step 6 of 7] Consortium loop — iterating on feedback...
+
 For rounds 2 and 3 (max 3 total rounds):
 
 1. Read the previous audit report (`audit-round-<N-1>.md`).
@@ -363,6 +321,8 @@ Also fix any AI writing patterns flagged by the auditor (filler phrases, adverbs
 8. If this is round 3, stop and take the best score.
 
 ### Step 7 — Generate Styled Output
+
+[Step 7 of 7] Generating styled output...
 
 Apply the user's chosen style from Step 0 to generate the final output.
 

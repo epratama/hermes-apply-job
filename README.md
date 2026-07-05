@@ -69,23 +69,17 @@ Replace the URL with an actual job listing. You'll be asked to choose a style
 and format **before** the pipeline runs — four styles are available
 (classic, modern, minimal, keep mine) in DOCX or PDF output.
 
-You can also browse templates online and paste a Typst Universe URL for
-inspiration: https://typst.app/universe/search?q=resume
-
 ## Preparing Your Resume
 
-The `--resume` flag copies your file into the project as `resume.docx` — this
-is your source of truth for all tailored output. The file is gitignored and
-never committed.
+The `--resume` flag copies or converts your file into the project as `resume.docx`
+— this is your source of truth for all tailored output. The file is gitignored.
 
-- **Already have a DOCX?** Point `--resume` to it:
-  `python3 scripts/setup.py --resume ~/Documents/my-resume.docx`
-- **PDF or other formats?** The setup script copies whatever file you provide
-  and saves it as `resume.docx`. Pandoc is used at runtime to extract text.
-  **Note:** "keep mine" style (style 4) requires an actual DOCX file — it
-  reads your document's fonts and colors with python-docx.
-- **No resume yet?** Write one first. The pipeline tailors existing content
-  to job descriptions — it doesn't create a resume from scratch.
+Supported formats: **docx** (native), **md / txt** (pandoc), **pdf** (pandoc)
+
+- `python3 scripts/setup.py --resume ~/Documents/my-resume.docx`
+- `python3 scripts/setup.py --resume ~/Documents/my-resume.md`
+- `python3 scripts/setup.py --resume ~/Documents/my-resume.pdf`
+- **No resume yet?** Write one first. The pipeline tailors existing content.
 
 If `resume.docx` is missing when you run `/apply-job`, the pipeline stops
 and asks you to place it there.
@@ -201,8 +195,7 @@ You can change styles between job applications without re-running setup.
 | **DOCX** (default) | Editable in Word, Pages, LibreOffice. Make final tweaks before sending. |
 | **PDF** | Print-ready, locked layout. Best for direct submission. |
 
-4 styles available (classic, modern, minimal, keep mine) + browse custom templates at
-https://typst.app/universe/search?q=resume for design inspiration. "keep mine"
+4 styles available (classic, modern, minimal, keep mine). "keep mine"
 preserves your master document's formatting.
 
 ## How the Pipeline Works
@@ -323,9 +316,8 @@ Yes. Hermes Agent supports Windows natively.
 `git pull && python3 scripts/setup.py --resume <path>`
 
 ### My resume is in Word/Pages format
-DOCX is the recommended format. The setup script accepts any file and saves
-it as `resume.docx`. Pandoc reads DOCX natively at runtime — no conversion
-needed.
+The setup script accepts docx, md, txt, and pdf (pandoc required for non-docx).
+Your file is converted to resume.docx automatically.
 
 ### I already have MoA presets. Will setup overwrite them?
 No. For fresh configurations, setup merges the defaults and creates a
@@ -340,10 +332,9 @@ again.
 Re-run `/apply-job <url>`. The pipeline regenerates all templates — pick a
 different one. No need to re-run setup.
 
-### How do I use a custom resume template for design inspiration?
-Browse https://typst.app/universe/search?q=resume. When the pipeline
-asks for style selection, paste the package URL. Hermes extracts the
-design system and applies it to your content via HTML/CSS.
+### How do I change the resume template?
+Re-run `/apply-job <url>`. The pipeline regenerates all templates — pick a
+different one. No need to re-run setup.
 
 ## License
 

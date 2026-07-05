@@ -119,11 +119,39 @@ def copy_resume(resume_path):
     header("Resume")
     src = Path(resume_path).expanduser().resolve()
     dst = Path(__file__).parent.parent / "resume.docx"
+
     if not src.exists():
         err(f"Resume not found: {src}")
         sys.exit(1)
-    shutil.copy2(src, dst)
-    ok(f"Copied {src.name} to resume.docx")
+
+    if src == dst.resolve():
+        ok(f"Already in place: resume.docx")
+        return
+
+    ext = src.suffix.lower()
+    if ext in (".md", ".txt"):
+        if not shutil.which("pandoc"):
+            err("Markdown/txt input requires pandoc. Install: https://pandoc.org/installing.html")
+            sys.exit(1)
+        ok(f"Converting {src.name} to resume.docx via pandoc...")
+        rc, _ = run(f"pandoc {src} -o {dst}", capture=False)
+        if rc != 0:
+            err("Pandoc conversion failed. Is your file valid?")
+            sys.exit(1)
+        ok(f"Converted {src.name} to resume.docx")
+    elif ext == ".pdf":
+        if not shutil.which("pandoc"):
+            err("PDF input requires pandoc. Install: https://pandoc.org/installing.html")
+            sys.exit(1)
+        ok(f"Converting {src.name} (first page) to resume.docx via pandoc...")
+        rc, _ = run(f"pandoc {src} -o {dst}", capture=False)
+        if rc != 0:
+            err("Pandoc conversion failed. Is your PDF text-selectable?")
+            sys.exit(1)
+        ok(f"Converted {src.name} to resume.docx")
+    else:
+        shutil.copy2(src, dst)
+        ok(f"Copied {src.name} to resume.docx")
 
 
 def install_skills():
@@ -248,7 +276,8 @@ def print_summary():
 
 def main():
     parser = argparse.ArgumentParser(description="Hermes Apply-Job Setup")
-    parser.add_argument("--resume", required=True, help="Path to your resume (DOCX recommended; copied as resume.docx)")
+    parser.add_argument("--resume", required=True,
+                        help="Path to your resume (docx/md/txt/pdf; pandoc required for non-docx)")
     parser.add_argument("--yes", "-y", action="store_true",
                         help="Skip all prompts (for automated/agent-driven setup)")
     args = parser.parse_args()
