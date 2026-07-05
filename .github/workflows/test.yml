@@ -1,0 +1,19 @@
+name: tests
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run setup tests
+        run: python test_setup.py
+        working-directory: tests
+      - name: Run preview tests
+        run: python test_preview.py
+        working-directory: tests
+      - name: Run skill tests
+        run: python test_skill.py
+        working-directory: tests
