@@ -25,6 +25,8 @@ to use a different provider.
 
 ### 3. Prepare your resume (docx, md, txt, or pdf). See [Preparing Your Resume](#preparing-your-resume)
 
+`--resume` is optional — skip it to explore first, add your resume later.
+
 ### 4. Clone and set up
 
 ```bash
@@ -66,13 +68,14 @@ the agent how this project works.
 Replace the URL with an actual job listing. You'll be asked to choose a style
 and format **before** the pipeline runs — four styles are available
 (classic, modern, minimal, keep mine) in DOCX or PDF output.
+(preview.py generates 3 of 4 styles; keep-mine requires a real resume via /apply-job)
 
 ## Preparing Your Resume
 
 The `--resume` flag copies or converts your file into the project as `resume.docx`
 — this is your source of truth for all tailored output. The file is gitignored.
 
-Supported formats: **docx** (native), **md / txt** (pandoc), **pdf** (pandoc)
+Supported formats: **docx** (native), **md / txt** (pandoc), **pdf** (pandoc ≥ 2.0 recommended)
 
 - `python3 scripts/setup.py --resume ~/Documents/my-resume.docx`
 - `python3 scripts/setup.py --resume ~/Documents/my-resume.md`
@@ -196,7 +199,7 @@ You can change styles between job applications without re-running setup.
 4 styles available (classic, modern, minimal, keep mine). "keep mine"
 preserves your master document's formatting.
 
-Run `python scripts/preview.py <style>` to preview any style with lorem ipsum content.
+Run `python3 scripts/preview.py <style>` to preview any style with lorem ipsum content.
 
 ## How the Pipeline Works
 
