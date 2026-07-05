@@ -1,6 +1,7 @@
-resume.pdf
 tailored-resumes/*
 !tailored-resumes/.gitkeep
 *.pyc
 __pycache__/
 .superpowers/
+resume.docx
+previews/

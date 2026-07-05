@@ -1,6 +1,6 @@
 # Resume Optimization Project
 
-This project tailors your resume (`resume.pdf`) to specific job listings
+This project tailors your resume (`resume.docx`) to specific job listings
 using a multi-agent MoA consortium orchestrated by Hermes.
 
 ## How It Works
@@ -12,7 +12,7 @@ using a multi-agent MoA consortium orchestrated by Hermes.
 
 ## Key Files
 
-- `resume.pdf` — your base resume (gitignored, provided via setup script)
+- `resume.docx` — your base resume (gitignored, provided via setup script)
 - `IDEA.md` — full project spec with MoA presets and pipeline details
 - `scripts/setup.py` — one-command setup (skill install + MoA config + resume copy)
 - `config/moa-presets.yaml` — MoA model configuration
@@ -53,8 +53,8 @@ Output format (md, docx, or pdf) is selected at setup time via `--format`.
 
 ## Guardrails
 
-- Never fabricate experience. All claims must be traceable to `resume.pdf`.
+- Never fabricate experience. All claims must be traceable to `resume.docx`.
 - If you lack a skill, acknowledge it honestly in the cover letter.
-- Use real contact info only — name, email, phone, LinkedIn from `resume.pdf`.
+- Use real contact info only — name, email, phone, LinkedIn from `resume.docx`.
 - Output format is configured at setup. Default is markdown.
 - Use the JD's language style.

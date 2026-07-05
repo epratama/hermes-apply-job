@@ -1,18 +1,13 @@
 ---
 name: apply-job
 description: Tailor your resume and cover letter for a specific job listing using a multi-agent MoA consortium
-version: 1.0.0
+version: 2.0.0
 platforms: [macos, linux, windows]
 metadata:
   hermes:
     tags: [career, resume, job-search]
     category: career
     requires_toolsets: [terminal, delegation, web]
-    config:
-      - key: output_format
-        description: "Output format for tailored documents"
-        default: "md"
-        prompt: "Output format (md, docx, or pdf)?"
 ---
 
 # Apply Job — Resume & Cover Letter Tailoring
@@ -22,7 +17,13 @@ metadata:
 When the user wants to tailor their resume to a specific job listing.
 Triggered via `/apply-job <job-listing-url>`.
 
-The user's base resume is `resume.pdf` in the project root.
+The user's base resume is `resume.docx` in the project root.
+The master document is never modified — templates only affect the tailored output.
+
+## Style Preference
+
+The user's style+format preference is saved after each run.
+On subsequent runs, pressing Enter reuses the last saved choice.
 
 ## MoA Presets
 
@@ -37,23 +38,99 @@ If these presets are not configured, stop and tell the user to add them.
 ## Procedure
 
 You are the orchestrator. Execute each step in order. Switch MoA presets before spawning subagents.
+Do NOT run any pipeline steps until the user has chosen a style and format.
 
-### Step 0 — Pre-Flight Checks
+### Step 0 — Style & Format Selection
 
-1. Verify `resume.pdf` exists in the project root. If not, stop and tell the user to place it there.
-2. Convert `resume.pdf` to text once (all subagents will use this file):
-   Try `pdfplumber` first (Python library, always available):
-   `python3 -c "
-   import pdfplumber
-   with pdfplumber.open('resume.pdf') as pdf:
-       text = '\n'.join(p.extract_text() or '' for p in pdf.pages)
-   open('/tmp/resume-base.txt', 'w').write(text)"`
-   If `pdfplumber` fails, try `pdftotext`:
-   `pdftotext resume.pdf /tmp/resume-base.txt`
-   If neither tool is available, stop and tell the user: "Install pdfplumber
-   (pip install pdfplumber) or pdftotext to extract text from your resume."
+1. Before anything else, ask the user what style and output format they want.
+   Show this prompt exactly:
 
-### Step 1 — Job Analyzer (max 2 retries)
+```
+═══════════════════════════════════════════════════════════════════════
+               Choose Your Resume Style & Format
+═══════════════════════════════════════════════════════════════════════
+
+Before I tailor your resume, pick how you want it to look.
+
+📂 Browse templates: https://typst.app/universe/search?q=resume
+
+Styles:
+  1. classic      Serif, traditional, horizontal rules
+  2. modern       Sans-serif (Inter), subtle blue accent
+  3. minimal      Clean monochrome, ATS-friendly, max whitespace
+  4. keep mine    Preserve your master resume's existing style
+
+Output format:
+  docx           Editable in Word, Pages, LibreOffice (tweak before sending)
+  pdf            Print-ready, locked layout (best for direct submission)
+
+What would you like to do?
+
+  ↳ Preview first  — See lorem ipsum samples of every style
+    Reply: "preview"
+
+  ↳ Pick and go    — Choose a style + format, start immediately
+    Reply: "2 docx" or "modern pdf" or "4"
+
+  ↳ Browse online  — Found something on Typst Universe?
+    Reply: paste the URL
+
+⚠ Your master resume.docx is never modified. Styles only apply to the
+  tailored output you submit to employers.
+  "4 — keep mine" means your tailored resumes will use the same fonts,
+  colors, and layout as your master document.
+
+Which style and format?
+```
+
+If the user has a saved preference from a previous run, prepend:
+```
+Last used: <style> (<format>)
+  ↵ Press Enter to use "<style> <format>"
+  Or: 1, 2, 3, 4, paste URL, or "preview"
+```
+
+2. Handle the user's response based on what they say:
+
+   **"preview"** → Generate lorem ipsum previews for all 4 styles:
+   - Read lorem ipsum content from `skills/apply-job/lorem-resume.md`
+     and `skills/apply-job/lorem-coverletter.md` (ships with the skill)
+   - For each style {1-classic, 2-modern, 3-minimal, 4-keep mine}:
+     * Run `python3 skills/ui-ux-pro-max/scripts/search.py "<keywords>" --design-system`
+       to get a design system (colors, typography, spacing)
+     * For style 4: read `resume.docx` styles via `python3 -c "import docx; doc=docx.Document('resume.docx'); print(doc.styles['Normal'].font.name)"`
+     * Inject the lorem ipsum content + design system CSS into `templates/resume/base.html`
+     * Save to `previews/<style>-resume.html` and `previews/<style>-coverletter.html`
+   - Print the generated files with descriptions
+   - Ask: "Which style and format do you want?"
+
+   **Direct pick** ("2 docx", "modern pdf", "4", etc.):
+   - If format is missing (just a number or name), ask "DOCX or PDF?"
+   - Save the choice as the user's default
+   - Proceed to Step 1 (pre-flight)
+
+   **Typst Universe URL:**
+   - Extract package name from URL
+   - `typst init @preview/<package>` to download the template
+   - Extract visual design (fonts, colors, layout) from the .typ file
+   - Adapt to single-column if needed (ATS compatibility)
+   - Generate a lorem ipsum preview
+   - Print the preview path + design details
+   - Ask "Use this style? ('yes' docx/pdf to save and start)"
+
+   **Enter (no input):**
+   - Use the previously saved style+format
+   - Proceed to Step 1
+
+### Step 1 — Pre-Flight Checks
+
+1. Verify `resume.docx` exists in the project root. If not, stop and tell the user to place it there.
+2. Convert to text once (all subagents will use this file):
+   `pandoc resume.docx -t plain --wrap=none -o /tmp/resume-base.txt`
+   If pandoc is not available, stop and tell the user: "Pandoc is required.
+   Install: brew install pandoc"
+
+### Step 2 — Job Analyzer (max 2 retries)
 
 1. Extract the job-listing URL from the `/apply-job` command argument.
 2. Switch model to MoA preset `resume-analyzer`: `/model resume-analyzer --provider moa`
@@ -89,7 +166,7 @@ and save the partial analysis. The orchestrator will ask the user to paste the f
    If the 2nd attempt also misses sections, continue with what's available.
 7. Switch model back to your default: `/model default --provider moa`
 
-### Step 2 — Resume Writer (max 1 retry)
+### Step 3 — Resume Writer (max 1 retry)
 
 1. Switch model to MoA preset `resume-writer`: `/model resume-writer --provider moa`
 2. Spawn a subagent with toolsets `[terminal]`. Give it this exact prompt:
@@ -127,7 +204,7 @@ Rules:
 3. Wait for the subagent to finish (max 1 retry if file not created). Verify the file was created.
 4. Switch model back to default.
 
-### Step 3 — Cover Letter Writer (max 1 retry)
+### Step 4 — Cover Letter Writer (max 1 retry)
 
 1. Switch model to MoA preset `resume-writer`: `/model resume-writer --provider moa`
 2. Spawn a subagent with toolsets `[terminal]`. Give it this exact prompt:
@@ -161,7 +238,7 @@ Rules:
 3. Wait for the subagent to finish (max 1 retry if file not created). Verify the file was created.
 4. Switch model back to default.
 
-### Step 4 — Auditor (max 1 retry)
+### Step 5 — Auditor (max 1 retry)
 
 1. Switch model to MoA preset `resume-auditor`: `/model resume-auditor --provider moa`
 2. Spawn a subagent with toolsets `[terminal]`. Give it this exact prompt:
@@ -252,11 +329,11 @@ Output format:
 
 3. Wait for the subagent to finish (max 1 retry if report not created).
 4. Read the audit. If fabrication is detected, flag it to the user and
-   proceed to the consortium loop (Step 5) regardless of score — do not
-   skip to Step 6 until fabrication is resolved.
-   If score ≥ 90 and no fabrication was detected, skip to Step 6.
+   proceed to the consortium loop (Step 6) regardless of score — do not
+   skip to Step 7 until fabrication is resolved.
+   If score ≥ 90 and no fabrication was detected, skip to Step 7.
 
-### Step 5 — Consortium Loop
+### Step 6 — Consortium Loop
 
 For rounds 2 and 3 (max 3 total rounds):
 
@@ -278,146 +355,73 @@ Also fix any AI writing patterns flagged by the auditor (filler phrases, adverbs
 
 4. Wait for the subagent to finish.
 5. Switch model back to default.
-6. Re-run the Auditor (Step 4, incrementing N).
+6. Re-run the Auditor (Step 5, incrementing N).
 7. If overall score ≥ 90, break out of the loop.
 8. If this is round 3, stop and take the best score.
 
-### Step 6 — Template Selection & PDF Generation
+### Step 7 — Generate Styled Output
 
-1. Read the configured `output_format` from the skill's config (default: `md`).
+Apply the user's chosen style from Step 0 to generate the final output.
 
-2. If format is **md** or **docx**:
-   - Convert the file: `pandoc ... -o ...` (docx only, md stays as-is).
-   - Print: "Template selection and styled PDF output require typst.
-     Re-run setup with --format pdf: python3 scripts/setup.py --resume <path> --format pdf
-     Install typst: brew install typst
-     Browse templates: https://typst.app/universe/search?q=resume
-     Keeping your <format> output. Run /apply-job again with --format pdf
-     when ready."
-   - Skip to step 4 (final summary).
+1. Get the design system for the chosen style:
 
-3. If format is **pdf** and **typst is not installed**:
-   - Fall back to pandoc + wkhtmltopdf for a single basic PDF.
-   - Print: "typst not installed — basic PDF only (no template selection).
-     Install typst: brew install typst
-     Browse templates: https://typst.app/universe/search?q=resume"
-   - Skip to step 4 (final summary).
+   - **Styles 1-3 (classic/modern/minimal)**: Run UI-UX-Pro-Max:
+     `python3 skills/ui-ux-pro-max/scripts/search.py "resume <keywords>" --design-system`
+     Extract colors, fonts, spacing from the design system output.
 
-4. **PDF + typst available — Template generation:**
+   - **Style 4 (keep mine)**: Read `resume.docx` styles:
+     `python3 -c "import docx; doc=docx.Document('resume.docx'); s=doc.styles['Normal']; print(s.font.name, s.font.size, s.font.color.rgb)"`
+     Extract the master document's fonts, colors, and margins as the design system.
 
-   a. Read `tailored-resumes/<company>-<role>/Resume.md`.
-      The first `# ` heading is the candidate's name. The text between
-      that heading and the first `## ` section header is the candidate's
-      contact info (email, phone, location). Use these as `{{NAME}}` and
-      `{{CONTACT}}`.
+   - **Custom URL**: Use the design system extracted during Step 0 preview.
 
-   b. Convert markdown to raw Typst:
-      `pandoc tailored-resumes/<company>-<role>/Resume.md -t typst -o /tmp/resume-body.typ`
-      `pandoc tailored-resumes/<company>-<role>/CoverLetter.md -t typst -o /tmp/cover-body.typ`
+2. Generate HTML from markdown:
+   `pandoc tailored-resumes/<company>-<role>/Resume.md -t html5 -o /tmp/resume.html`
+   `pandoc tailored-resumes/<company>-<role>/CoverLetter.md -t html5 -o /tmp/cover.html`
 
-   c. For each template name: classic, modern, and minimal:
-      - Read the template: `templates/resume/<name>.typ` and
-        `templates/coverletter/<name>.typ`
-      - Use string replacement: swap `{{NAME}}` with the candidate name,
-        `{{CONTACT}}` with the contact info, `{{CONTENT}}` with the
-        Typst body. Write the result to `/tmp/<name>-resume.typ` and
-        `/tmp/<name>-cover.typ`.
-      - Compile: `typst compile /tmp/<name>-resume.typ tailored-resumes/<company>-<role>/<name>-resume.pdf`
-      - Same for cover: `typst compile /tmp/<name>-cover.typ tailored-resumes/<company>-<role>/<name>-coverletter.pdf`
+3. Inject the design system as CSS into the HTML using `templates/resume/base.html`
+   and `templates/resume/base.css` as the foundation.
 
-      If `typst compile` fails for any template:
-      - Print the error and skip that template
-      - Delete the failed PDF file if it was partially created
-      - Continue with the remaining templates
-      - If ALL three templates fail, fall back to pandoc + wkhtmltopdf
-        for a single basic PDF, keeping the markdown as backup
+4. Convert to the user's chosen format:
+   - **DOCX**: `pandoc /tmp/resume.html -o tailored-resumes/<company>-<role>/Resume.docx`
+   - **PDF**: `weasyprint /tmp/resume.html tailored-resumes/<company>-<role>/Resume.pdf`
+   - Same for cover letter.
 
-   d. Print selection prompt:
-
-```
-═══ Template Selection ═══
-
-Browse templates or pick a built-in style:
-
-📂 All resume templates: https://typst.app/universe/search?q=resume
-
-Built-in styles:
-  1. classic  — Serif, traditional, horizontal rules
-  2. modern   — Sans-serif (Inter), blue accent, sidebar
-  3. minimal  — Monochrome, hairline rules, ATS-friendly
-
-If you found a template on Typst Universe you prefer, paste the package
-URL (e.g., "https://typst.app/universe/package/brilliant-cv").
-
-PDFs previewed at tailored-resumes/<company>-<role>/:
-  classic-resume.pdf    classic-coverletter.pdf
-  modern-resume.pdf     modern-coverletter.pdf
-  minimal-resume.pdf    minimal-coverletter.pdf
-
-Reply with a number (1-3), a template name, or a Typst Universe URL.
-```
-
-   e. Wait for user response. Match to template:
-
-      - **Number (1/2/3) or name ("classic"/"modern"/"minimal")**:
-        Select the matching built-in template.
-
-      - **Typst Universe URL** (e.g., `https://typst.app/universe/package/<name>`):
-        Extract the package name. Check if `templates/resume/<name>.typ`
-        exists in the project — if so, use it. Otherwise, run
-        `typst init @preview/<name>` to download the template.
-        Inject content, compile, present. If compile fails:
-        "Template '<name>' failed to compile: <error>.
-        Pick a different template or use a built-in style."
-
-   f. On selection:
-      - Rename `<chosen>-resume.pdf` → `Resume.pdf`
-      - Rename `<chosen>-coverletter.pdf` → `CoverLetter.pdf`
-      - Delete the 4 PDFs for the two templates NOT chosen
-      - Delete the intermediate Resume.md and CoverLetter.md
-        Keep: analysis.md and all audit-round-*.md.
+   If weasyprint is not available, try `python3 -c "import weasyprint"`
+   or fall back to pandoc + wkhtmltopdf for PDF.
 
 5. Print final summary:
 
 ```
+═══════════════════════════════════════════════════════════════════════
+                             Done
+═══════════════════════════════════════════════════════════════════════
+
 <Company Name> — <Role Title>
-Template: <chosen>
-Final Audit Score: X/100 (Round N)
-Files: tailored-resumes/<company>-<role>/Resume.pdf, CoverLetter.pdf
+Style: <chosen> | Format: <format> | Score: X/100
+
+📍 tailored-resumes/<company>-<role>/
+     Resume.<format>
+     CoverLetter.<format>
+     analysis.md
+     audit-round-1.md (up to 3)
 ```
 
-### Step 6g — Clean Temporary Files
-
-Remove all temporary files (no prompt — automatic):
-
-```
-python3 -c "
-import os, glob
-files = ['/tmp/resume-base.txt', '/tmp/resume-body.typ', '/tmp/cover-body.typ']
-for name in ['classic', 'modern', 'minimal']:
-    files.append(f'/tmp/{name}-resume.typ')
-    files.append(f'/tmp/{name}-cover.typ')
-for f in files:
-    try: os.remove(f)
-    except FileNotFoundError: pass
-"
-print('Cleanup: removed temporary files')
-```
+6. Clean temporary files: remove `/tmp/resume-base.txt`, `/tmp/*.html`, previews.
+   Do not remove `tailored-resumes/` contents.
 
 ## Pitfalls
 
 - If MoA presets are not configured, stop early and tell the user: "MoA presets are missing. Run `python3 scripts/setup.py` to configure them."
-- If `resume.pdf` is not found in the project root, stop and ask the user to place it there.
+- If `resume.docx` is not found in the project root, stop and ask the user to place it there.
 - Subagents timeout after 50 iterations by default. If a subagent times out, re-spawn it
   (respecting the max retry limit for that step) with a narrower scope.
 - Fabrication is the hardest failure mode. Auditor must cross-reference every major claim
   against `/tmp/resume-base.txt`. If uncertain, flag it.
 - The `<company>-<role>` slug is derived from the analysis. If the Analyzer fails to
   extract these, use a fallback like `job-<timestamp>`.
-- If `typst` or `pandoc` is not installed when generating PDFs, fall back to markdown
-  output and print the install command.
-- If a template compile fails (`typst compile` error), the pipeline skips that template
-  and continues with the remaining ones. If all fail, falls back to wkhtmltopdf.
+- If pandoc is not installed, stop and tell the user: "Pandoc is required. Install: brew install pandoc"
+- If the user's chosen style generates visual errors, fall back to the default modern style.
 
 ## Verification
 
@@ -426,5 +430,5 @@ To test the pipeline:
 1. Run `/apply-job <url>` with a known job listing
 2. Verify all files are created in `tailored-resumes/`
 3. Check the audit score
-4. Review the tailored resume for accuracy (cross-reference against resume.pdf)
+4. Review the tailored resume for accuracy (cross-reference against resume.docx)
 5. Run `/apply-job` with a different role/company to verify consistent behavior

@@ -5,7 +5,7 @@ Author: Eky Pratama
 Repo:   https://github.com/epratama/hermes-apply-job
 
 Usage:
-    python3 scripts/setup.py --resume ~/my-resume.pdf [--format md|docx|pdf]
+    python3 scripts/setup.py --resume ~/my-resume.docx
 """
 
 import argparse
@@ -24,8 +24,6 @@ DEVNULL = "NUL" if IS_WINDOWS else "/dev/null"
 
 HERMES_URL = "https://hermes-agent.nousresearch.com/"
 PANDOC_URL = "https://pandoc.org/installing.html"
-WKHTML_URL = "https://wkhtmltopdf.org/downloads.html"
-TYPST_URL = "https://github.com/typst/typst"
 
 IS_TTY = sys.stdout.isatty()
 C_RESET  = "\033[0m"  if IS_TTY else ""
@@ -186,12 +184,12 @@ def check_pandoc_needed(output_format):
 def copy_resume(resume_path):
     header("Resume")
     src = Path(resume_path).expanduser().resolve()
-    dst = Path(__file__).parent.parent / "resume.pdf"
+    dst = Path(__file__).parent.parent / "resume.docx"
     if not src.exists():
         err(f"Resume not found: {src}")
         sys.exit(1)
     shutil.copy2(src, dst)
-    ok(f"Copied {src.name} to resume.pdf")
+    ok(f"Copied {src.name} to resume.docx")
 
 
 def install_skills():
@@ -199,8 +197,8 @@ def install_skills():
     hermes_dir = _hermes_home()
     src_dir = Path(__file__).parent.parent / "skills"
 
-    # ponytail: two skills, unrolled. Loop overhead for N=2 is silly.
-    for name, cat in [("apply-job", "career"), ("stop-slop", "writing")]:
+    # ponytail: three skills, unrolled.
+    for name, cat in [("apply-job", "career"), ("stop-slop", "writing"), ("ui-ux-pro-max", "writing")]:
         src = src_dir / name
         dst = hermes_dir / "skills" / cat / name
         if not src.exists():
@@ -330,16 +328,14 @@ def set_output_format(output_format):
         warn(f"Could not set output format. Run manually: hermes config set skills.config.apply-job.output_format {output_format}")
 
 
-def print_summary(output_format):
-    print(f"\n{C_GREEN}{C_BOLD}Done.{C_RESET}  Output format: {output_format}")
+def print_summary():
+    print(f"\n{C_GREEN}{C_BOLD}Done.{C_RESET}  Style & format chosen at runtime.")
     print(f"  {C_CYAN}/apply-job{C_RESET} <job-listing-url>\n")
 
 
 def main():
     parser = argparse.ArgumentParser(description="Hermes Apply-Job Setup")
-    parser.add_argument("--resume", required=True, help="Path to your resume PDF")
-    parser.add_argument("--format", default="md", choices=["md", "docx", "pdf"],
-                        help="Output format (default: md)")
+    parser.add_argument("--resume", required=True, help="Path to your resume (DOCX or PDF)")
     parser.add_argument("--yes", "-y", action="store_true",
                         help="Skip all prompts (for automated/agent-driven setup)")
     args = parser.parse_args()
@@ -361,9 +357,10 @@ def main():
 
     check_hermes()
     check_toolsets()
-    check_pandoc_needed(args.format)
     copy_resume(args.resume)
     install_skills()
+    setup_moa()
+    print_summary()
     setup_moa()
     set_output_format(args.format)
     print_summary(args.format)

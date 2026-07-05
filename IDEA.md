@@ -9,7 +9,7 @@ for a specific job listing, maximizing interview conversion.
 Run the setup script to install the skill and configure MoA presets:
 
 ```bash
-python3 scripts/setup.py --resume <path-to-your-resume.pdf> [--format md|docx|pdf]
+python3 scripts/setup.py --resume <path-to-your-resume.docx> [--format md|docx|pdf]
 ```
 
 The script handles: installs the `apply-job` and `stop-slop` skills, MoA preset configuration, toolsets,
@@ -101,7 +101,7 @@ the failure immediately and stops the pipeline.
 ### Step 2 — Resume Writer (MoA: `resume-writer`)
 
 Orchestrator switches to `resume-writer`, spawns subagent. Takes the Job
-Analyzer output + your base resume (`resume.pdf`). Produces a tailored
+Analyzer output + your base resume (`resume.docx`). Produces a tailored
 resume (`tailored-resumes/<company>-<role>/Resume.md`):
 - Reorders bullet points so most relevant experience surfaces first
 - Weaves JD keywords into descriptions naturally — no keyword stuffing
@@ -128,7 +128,7 @@ documents on:
 - **Keyword coverage** — ≥85% of JD keywords present (weighted by prominence)
 - **ATS parsability** — standard section headings, no images/tables/icons,
   minimal formatting
-- **No fabrication** — all claims traceable to `resume.pdf`
+- **No fabrication** — all claims traceable to `resume.docx`
 - **Length** — resume ≤2 pages, cover letter ≤1 page (markdown equivalent)
 - **Tone** — professional, active voice, results-oriented
 - **Personalization** — cover letter references specific JD details,
@@ -179,7 +179,7 @@ Only the format selected via `--format` is produced (not all three).
 ## Guardrails (Non-Negotiable)
 
 - **Never fabricate** experience, degrees, certifications, or dates
-- All achievements must be traceable to `resume.pdf`
+- All achievements must be traceable to `resume.docx`
 - If a JD asks for something you genuinely lack:
   - Resume: do not mention it
   - Cover letter: acknowledge honestly as a growth area, not a skill you claim
@@ -190,12 +190,12 @@ Only the format selected via `--format` is produced (not all three).
 - **Inaccessible URL** — Job Analyzer reports failure, pipeline stops
 - **Non-parseable JD** — Job Analyzer surfaces what it could extract, asks
   user to paste the JD manually
-- **resume.pdf not found** — Pipeline stops with clear error
+- **resume.docx not found** — Pipeline stops with clear error
 - **Auditor detects fabrication** — Flagged explicitly, Writer must remove
   before next round
 
 ## Base Resume
 
-`resume.pdf` in the project root. This is your full work history — the source
+`resume.docx` in the project root. This is your full work history — the source
 of truth for all claims. Provided via `scripts/setup.py --resume <path>` and
 gitignored to keep your personal data out of version control.

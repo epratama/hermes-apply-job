@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resume</title>
+<style>
+/* base.css — ATS-friendly resume foundation */
+@page { size: letter; margin: 2cm 2.2cm; }
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Calibri', 'Helvetica Neue', 'Arial', sans-serif;
+  font-size: 10.5pt;
+  line-height: 1.5;
+  color: #1a1a1a;
+  max-width: 100%;
+}
+
+/* ── Design system injected here by Hermes ── */
+/* {{DESIGN_CSS}} */
+
+h1 { font-size: 22pt; text-align: center; margin-bottom: 0.3em; }
+h2 {
+  font-size: 11pt; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1.5pt; margin-top: 1.4em; margin-bottom: 0.3em;
+  padding-bottom: 0.2em; border-bottom: 1.5pt solid currentColor;
+}
+h3 { font-size: 10.5pt; font-weight: 600; margin-top: 0.8em; }
+p { margin: 0.3em 0; }
+ul { margin: 0.3em 0; padding-left: 1.2em; }
+li { margin-bottom: 0.3em; line-height: 1.4; }
+.contact { text-align: center; color: #555; margin-bottom: 1em; font-size: 9.5pt; }
+
+@media print {
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  @page { margin: 2cm 2.2cm; }
+}
+</style>
+</head>
+<body>
+
+<h1>{{NAME}}</h1>
+<p class="contact">{{CONTACT}}</p>
+
+{{CONTENT}}
+
+</body>
+</html>

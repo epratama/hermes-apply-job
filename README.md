@@ -23,17 +23,16 @@ hermes model                 # verify: shows your current provider/model
 Default presets use OpenRouter. See [Customizing Models](#customizing-models)
 to use a different provider.
 
-### 3. Prepare your resume as a PDF — see [Preparing Your Resume](#preparing-your-resume)
+### 3. Prepare your resume — DOCX or PDF. See [Preparing Your Resume](#preparing-your-resume)
 
 ### 4. Clone and set up
 
 ```bash
 git clone https://github.com/epratama/hermes-apply-job && cd hermes-apply-job
-python3 scripts/setup.py --resume ~/your-resume.pdf
+python3 scripts/setup.py --resume ~/your-resume.docx
 ```
 
-Start with markdown (the default). Add `--format pdf` once you have
-pandoc + typst installed.
+Style and output format are chosen at runtime during `/apply-job`. No flags needed.
 
 For an AI agent to run setup unattended, add `--yes`:
 
@@ -171,14 +170,17 @@ for all configuration options (temperature, max tokens, multi-provider mixing).
 
 ## Output Formats
 
-| Flag | Output | Requirements |
-|------|--------|-------------|
-| `--format md` (default) | `Resume.md`, `CoverLetter.md` | None |
-| `--format docx` | `Resume.docx`, `CoverLetter.docx` | pandoc |
-| `--format pdf` | `Resume.pdf`, `CoverLetter.pdf` | pandoc + typst (recommended) or wkhtmltopdf |
+Style and format are chosen at the start of each `/apply-job` run — not at setup time.
+You can change styles between job applications without re-running setup.
 
-Output lands in `tailored-resumes/<company>-<role>/` along with the job
-analysis and audit reports. Only the format you selected is produced.
+| Format | Description |
+|--------|-------------|
+| **DOCX** (default) | Editable in Word, Pages, LibreOffice. Make final tweaks before sending. |
+| **PDF** | Print-ready, locked layout. Best for direct submission. |
+
+3 built-in styles (classic, modern, minimal) + browse custom templates at
+https://typst.app/universe/search?q=resume. Choose "keep mine" to preserve
+your master document's formatting.
 
 ## How the Pipeline Works
 
